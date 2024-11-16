@@ -1,0 +1,139 @@
+---
+title: "Final Project Proposal"
+---
+
+## **Career Compass: Mapping Your Job Prospects**
+
+**Team Members**: Amanda Kim (akim148), Da Yea Song (dsong13), Nhi Dinh (nhidinh), Xintong Li (xli355)
+
+**Team Name:** Git It Together
+
+**Research Question**: Can we predict an individual's employment probability in the United States using their personal and professional characteristics?
+
+**Importance**: Employment prediction can help job seekers understand job market dynamics and identify areas for personal improvement.
+
+**What do we currently know?**
+
+The Bureau of Labor Statistics developed industry and occupational employment projections. An input-output (I-O) model estimates an industry-level employment needed for a specific GDP level (U.S. Bureau of Labor Statistics, 2024). The Bureau also uses a National Employment Matrix to detail employment by occupation, across various salary positions, working classes, and industries (U.S. Bureau of Labor Statistics, 2024). In addition to population-level predictions, machine learning has been applied to predict individual career outcomes. For instance, Ohio University's career coaching services use student success analytics software powered by machine learning to predict students' likelihood of graduating without job offers and initiate timely interventions (Hugo, 2019). However, based on our research, we have not been able to find a model that takes into consideration an individual\'s specific measurements (degree, industry, geographic location, sociodemographic variables such as age, sex, etc) to generate an estimated percentage/likelihood of finding a job/position. We will create an interactive dashboard for users to manually enter their specific criteria, characteristics, and measurements to receive a predicted likelihood of finding a job in a specific geographic location and industry/field.  
+
+1.  **Sex & Race: \[Da Yea\]** Sex and race significantly influence employment outcomes, with research showing that women and racial minorities often face systemic barriers in the labor market. Women, particularly women of color, experience lower employment rates and wage disparities compared to their male and white counterparts, attributed to factors like occupational segregation, discrimination, and caregiving responsibilities (Goldin, 2014; Blau & Kahn, 2017). 
+
+```{=html}
+<!-- -->
+```
+2.  **Age & Marriage Status \[Nhi\]:** Among women, participation in education is (bachelor\'s and higher) is associated with increased employment, decreased in marred status, later occurrence of marriage, increase age of childbearing, and decreased fertility rates (Esencan, 2021).  
+
+```{=html}
+<!-- -->
+```
+3.  **Geographic location & Country of Birth (Binary: US/Not): \[Xintong\]:** Employment statistics from 58 countries indicate that rural residents are 5% more likely to be employed compared to their urban counterparts (Ananian & Dellaferrera, 2024). Furthermore, people living near thriving job markets are morelikely to be employed compared to those farther away (Muraca, 2014). In 2023, the unemployment rate for native-born populations remained relatively stable at 3.6%, which is below the pre-pandemic level of 3.8% (U.S. Bureau of Labor Statistics, 2024). However, the unemployment rate for foreign-born individuals in the U.S. increased slightly from 3.4% in 2022 to 3.6% in 2023, staying above the pre-pandemic rate of 3.1% recorded in 2019 (U.S. Bureau of Labor Statistics, 2024). 
+
+```{=html}
+<!-- -->
+```
+4.  **Education & Industry: \[Amanda\]** Those with degrees that align closely with their industry (e.g., engineering degree holders in engineering roles) typically have stronger employment prospects and lower chances of job displacement. Misalignment between education and industry can lead to underemployment or the need for additional certifications or skills development (Bonnie, 2015). In addition, employment is typically robust for individuals with advanced degrees in specialized fields, particularly in sectors with significant knowledge and skill demands, such as medical, engineering, and scientific research fields (Horowitz, 2018).  
+
+**Data Description:** U.S Bureau of Labor Statistics (API gives public access to economic data from all BLS programs)
+
+Variables we want to explore/use for our model: 
+
+1.  **Employment and Earnings Data:** 
+
+-   Employment status (employed, unemployed, not in labor force) 
+-   Employment level
+-   Unemployment rate 
+-   Labor force participation rate 
+-   Gender, age, race, and ethnicity
+-   Education level 
+
+2.  **Wages and Income:** 
+
+-   Median income by occupation 
+-   Weekly or hourly earnings 
+-   Average hourly earnings by sector 
+-   Income by age, race, sex, or educational attainment 
+
+3.  **Geographical and Industry Data:** 
+
+-   State or region (such as U.S. state or metro area)
+-   Industry and occupation codes (e.g., NAICS or SOC codes) 
+-   Job openings by industry 
+
+4.  **Labor Market Dynamics and Job Characteristics:** 
+
+-   Average workweek hours 
+-   Turnover rates and job openings 
+-   Job vacancy rates by industry and occupation 
+
+5.  **Demographic and Socioeconomic Variables:** 
+
+-   Age groups 
+-   Gender 
+-   Education level 
+-   Marital status
+-   National Citizenship/Visa
+
+6.  **Time Series Data:** 
+
+-   Monthly, quarterly, or annual data points (e.g., time series data for employment or income trends) 
+
+**Programming Paradigms**
+
+-   [Functional Programming]{.underline}: For modular code, especially in data cleaning and transformations. 
+
+```{=html}
+<!-- -->
+```
+-   [Machine Learning Paradigms]{.underline}: For building the predictive model. 
+
+Combining functional programming with machine learning is effective because both paradigms emphasize modularity, reproducibility, and scalability. Functional programming ensures reproducible and \"free from external state modification\" data transformations, which are critical for machine learning pipelines. Additionally, functional programming's declarative syntax, parallelism, and transparency make it easier to debug, test, and scale machine learning experiments. This synergy leads to cleaner, more maintainable code for complex models and large datasets. 
+
+**The Data Analytic Product:**
+
+-   We plan on creating a deployed dashboard (e.g. using `flexdashboard` or `shiny`)
+
+**Packages and/or software you plan to use**
+
+GitHub (collaboration and version control); BLS API (data retrieval); R (e.g., tidyverse, caret, tidymodels)
+
+**Tentative Timeline and Task Split**:
+
+-   <u>Project planning and background research</u> (\~Nov 15th) : All group members
+
+-   <u>Obtain data (\~Nov 15th)</u> : All group members
+
+-   <u>Explore data (\~Nov 22nd)</u> : Amanda & Da Yea
+
+-   <u>Data cleaning (\~Nov 22nd)</u> : Amanda & Da Yea
+
+-   <u>Prediction model selection</u> (\~Nov 22nd) : All group members
+
+-   <u>Model training and evaluation</u> (\~Dec 4th) : Nhi & Xintong
+
+-   <u>Result interpretation</u> (\~Dec 4th) : Nhi & Xintong
+
+-   <u>Develop dashboard</u> (\~Dec 9th) : All group members
+
+-   <u>Work on slides / presentation </u> (\~Dec 11th) : All group members
+
+**References** 
+
+Ananian, S., & Dellaferrera, G. (2024). Employment and wage disparities between rural and urban areas. ILO. <https://doi.org/10.54394/LNZT9066> 
+
+Blau, F. D., & Kahn, L. M. (2017). "The Gender Wage Gap: Extent, Trends, and Explanations." Journal of Economic Literature. 
+
+Bonnie RJ, Stroud C, Breiner H, editors. Investing in the Health and Well-Being of Young Adults. Washington (DC): National Academies Press (US); 2015 Jan 27. 4, Education and Employment. Available from: https://www.ncbi.nlm.nih.gov/books/NBK284788/ 
+
+Esencan E, Simsek B, Seli E. Analysis of female demographics in the United States: life expectancy, education, employment, family building decisions, and fertility service utilization. Curr Opin Obstet Gynecol. 2021;33(3):170-177. doi:10.1097/GCO.0000000000000704 
+
+Horowitz J. (2018). Relative Education and the Advantage of a College Degree. American sociological review, 83(4), 771--801. https://doi.org/10.1177/0003122418785371 
+
+Hugo, L. S. (2019). Predicting employment through machine learning. National Association of Colleges and Employers. Retrieved from <https://www.naceweb.org/center/> 
+
+Goldin, C. (2014). Career and Family: Women\'s Century-Long Journey Toward Equity. American Economic Review. 
+
+Muraca, F. (2014). How the geography of jobs affects unemployment: Why job accessibility is limited for some groups and what it means for anti-poverty policies. Econ Focus, Third Quarter 2014. <https://www.richmondfed.org/publications/research/econ_focus/2014/q3/feature2> 
+
+U.S. Bureau of Labor Statistics. (2024, May 21). Foreign-born workers: Labor force characteristics -- 2023 (USDL-24-1008). U.S. Department of Labor. <https://www.bls.gov/news.release/forbrn.htm> 
+
+ 

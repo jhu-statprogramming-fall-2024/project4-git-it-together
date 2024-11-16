@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.3.353">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>Final Project Proposal</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+</style>
+
+
+<script src="Proposal_files/libs/clipboard/clipboard.min.js"></script>
+<script src="Proposal_files/libs/quarto-html/quarto.js"></script>
+<script src="Proposal_files/libs/quarto-html/popper.min.js"></script>
+<script src="Proposal_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="Proposal_files/libs/quarto-html/anchor.min.js"></script>
+<link href="Proposal_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="Proposal_files/libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="Proposal_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="Proposal_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="Proposal_files/libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+
+
+</head>
+
+<body class="fullcontent">
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Final Project Proposal</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+</header>
+
+<section id="career-compass-mapping-your-job-prospects" class="level2">
+<h2 class="anchored" data-anchor-id="career-compass-mapping-your-job-prospects"><strong>Career Compass: Mapping Your Job Prospects</strong></h2>
+<p><strong>Team Members</strong>: Amanda Kim (akim148), Da Yea Song (dsong13), Nhi Dinh (nhidinh), Xintong Li (xli355)</p>
+<p><strong>Team Name:</strong> Git It Together</p>
+<p><strong>Research Question</strong>: Can we predict an individual’s employment probability in the United States using their personal and professional characteristics?</p>
+<p><strong>Importance</strong>: Employment prediction can help job seekers understand job market dynamics and identify areas for personal improvement.</p>
+<p><strong>What do we currently know?</strong></p>
+<p>The Bureau of Labor Statistics developed industry and occupational employment projections. An input-output (I-O) model estimates an industry-level employment needed for a specific GDP level (U.S. Bureau of Labor Statistics, 2024). The Bureau also uses a National Employment Matrix to detail employment by occupation, across various salary positions, working classes, and industries (U.S. Bureau of Labor Statistics, 2024). In addition to population-level predictions, machine learning has been applied to predict individual career outcomes. For instance, Ohio University’s career coaching services use student success analytics software powered by machine learning to predict students’&nbsp;likelihood of graduating without job offers&nbsp;and initiate timely interventions (Hugo, 2019). However, based on our research, we have not been able to find a model that takes into consideration an individual's specific measurements (degree, industry, geographic location, sociodemographic variables such as age, sex, etc) to generate an estimated percentage/likelihood of finding a job/position. We will create an interactive dashboard for users to manually enter&nbsp;their specific criteria, characteristics, and measurements to receive a predicted likelihood of finding a job in a specific geographic location and industry/field. &nbsp;</p>
+<ol type="1">
+<li><strong>Sex &amp; Race: [Da Yea]</strong> Sex and race significantly influence employment outcomes, with research showing that women and racial minorities often face systemic barriers in the labor market. Women, particularly women of color, experience lower employment rates and wage disparities compared to their male and white counterparts, attributed to factors like occupational segregation, discrimination, and caregiving responsibilities (Goldin, 2014; Blau &amp; Kahn, 2017).&nbsp;</li>
+</ol>
+<!-- -->
+<ol start="2" type="1">
+<li><strong>Age &amp; Marriage Status [Nhi]:</strong> Among women, participation in education is&nbsp;(bachelor's and higher) is associated with increased employment, decreased in marred status, later occurrence of marriage, increase age of childbearing, and decreased fertility rates (Esencan, 2021). &nbsp;</li>
+</ol>
+<!-- -->
+<ol start="3" type="1">
+<li><strong>Geographic location &amp; Country of Birth (Binary: US/Not): [Xintong]:</strong> Employment statistics from 58 countries indicate that rural residents are 5% more likely to be employed compared to their urban counterparts (Ananian &amp; Dellaferrera, 2024). Furthermore, people living near thriving job markets are morelikely&nbsp;to be employed compared to those farther away (Muraca, 2014). In 2023, the unemployment rate for native-born populations remained relatively stable at 3.6%, which is below the pre-pandemic level of 3.8% (U.S. Bureau of Labor Statistics, 2024). However, the unemployment rate for foreign-born individuals in the U.S. increased slightly from 3.4% in 2022 to 3.6% in 2023, staying above the pre-pandemic rate of 3.1% recorded in 2019 (U.S. Bureau of Labor Statistics, 2024).&nbsp;</li>
+</ol>
+<!-- -->
+<ol start="4" type="1">
+<li><strong>Education &amp; Industry: [Amanda]</strong> Those with degrees that align closely with their industry (e.g., engineering degree holders in engineering roles) typically have stronger employment prospects and lower chances of job displacement. Misalignment between education and industry can lead to underemployment or the need for additional certifications or skills development (Bonnie, 2015). In addition, employment is typically robust for individuals with advanced degrees in specialized fields, particularly in sectors with significant knowledge and skill demands, such as medical, engineering, and scientific research fields (Horowitz, 2018). &nbsp;</li>
+</ol>
+<p><strong>Data Description:</strong> U.S Bureau of Labor Statistics (API gives public access to economic data from all BLS programs)</p>
+<p>Variables we want to explore/use for our model:&nbsp;</p>
+<ol type="1">
+<li><strong>Employment and Earnings Data:</strong>&nbsp;</li>
+</ol>
+<ul>
+<li>Employment status (employed, unemployed, not in labor force)&nbsp;</li>
+<li>Employment level</li>
+<li>Unemployment rate&nbsp;</li>
+<li>Labor force participation rate&nbsp;</li>
+<li>Gender, age, race, and ethnicity</li>
+<li>Education level&nbsp;</li>
+</ul>
+<ol start="2" type="1">
+<li><strong>Wages and Income:</strong>&nbsp;</li>
+</ol>
+<ul>
+<li>Median income by occupation&nbsp;</li>
+<li>Weekly or hourly earnings&nbsp;</li>
+<li>Average hourly earnings by sector&nbsp;</li>
+<li>Income by age, race, sex, or educational attainment&nbsp;</li>
+</ul>
+<ol start="3" type="1">
+<li><strong>Geographical and Industry Data:</strong>&nbsp;</li>
+</ol>
+<ul>
+<li>State or region (such as U.S. state or metro area)</li>
+<li>Industry and occupation codes (e.g., NAICS or SOC codes)&nbsp;</li>
+<li>Job openings by industry&nbsp;</li>
+</ul>
+<ol start="4" type="1">
+<li><strong>Labor Market Dynamics and Job Characteristics:</strong>&nbsp;</li>
+</ol>
+<ul>
+<li>Average workweek hours&nbsp;</li>
+<li>Turnover rates and job openings&nbsp;</li>
+<li>Job vacancy rates by industry and occupation&nbsp;</li>
+</ul>
+<ol start="5" type="1">
+<li><strong>Demographic and Socioeconomic Variables:</strong>&nbsp;</li>
+</ol>
+<ul>
+<li>Age groups&nbsp;</li>
+<li>Gender&nbsp;</li>
+<li>Education level&nbsp;</li>
+<li>Marital status</li>
+<li>National Citizenship/Visa</li>
+</ul>
+<ol start="6" type="1">
+<li><strong>Time Series Data:</strong>&nbsp;</li>
+</ol>
+<ul>
+<li>Monthly, quarterly, or annual data points (e.g., time series data for employment or income trends)&nbsp;</li>
+</ul>
+<p><strong>Programming Paradigms</strong></p>
+<ul>
+<li><u>Functional Programming</u>: For modular code, especially in data cleaning and transformations.&nbsp;</li>
+</ul>
+<!-- -->
+<ul>
+<li><u>Machine Learning Paradigms</u>: For building the predictive model.&nbsp;</li>
+</ul>
+<p>Combining functional programming with machine learning is effective because both paradigms emphasize modularity, reproducibility, and scalability. Functional programming ensures reproducible and&nbsp;"free from external state modification" data transformations, which are critical for machine learning pipelines. Additionally, functional programming’s declarative syntax, parallelism, and transparency make it easier to debug, test, and scale machine learning experiments. This synergy leads to cleaner, more maintainable code for complex models and large datasets.&nbsp;</p>
+<p><strong>The Data Analytic Product:</strong></p>
+<ul>
+<li>We plan on creating a deployed dashboard (e.g.&nbsp;using <code>flexdashboard</code> or <code>shiny</code>)</li>
+</ul>
+<p><strong>Packages and/or software you plan to use</strong></p>
+<p>GitHub (collaboration and version control); BLS API (data retrieval); R (e.g.,&nbsp;tidyverse,&nbsp;caret,&nbsp;tidymodels)</p>
+<p><strong>Tentative Timeline and Task Split</strong>:</p>
+<ul>
+<li><p><u>Project planning and background research</u> (~Nov 15th) : All group members</p></li>
+<li><p><u>Obtain data (~Nov 15th)</u> : All group members</p></li>
+<li><p><u>Explore data (~Nov 22nd)</u> : Amanda &amp; Da Yea</p></li>
+<li><p><u>Data cleaning (~Nov 22nd)</u> : Amanda &amp; Da Yea</p></li>
+<li><p><u>Prediction model selection</u> (~Nov 22nd) : All group members</p></li>
+<li><p><u>Model training and evaluation</u> (~Dec 4th) : Nhi &amp; Xintong</p></li>
+<li><p><u>Result interpretation</u> (~Dec 4th) : Nhi &amp; Xintong</p></li>
+<li><p><u>Develop dashboard</u> (~Dec 9th) : All group members</p></li>
+<li><p><u>Work on slides / presentation </u> (~Dec 11th) : All group members</p></li>
+</ul>
+<p><strong>References</strong>&nbsp;</p>
+<p>Ananian, S., &amp; Dellaferrera, G. (2024). Employment and wage disparities between rural and urban areas. ILO. <a href="https://doi.org/10.54394/LNZT9066" class="uri">https://doi.org/10.54394/LNZT9066</a>&nbsp;</p>
+<p>Blau, F. D., &amp; Kahn, L. M. (2017). “The Gender Wage Gap: Extent, Trends, and Explanations.” Journal of Economic Literature.&nbsp;</p>
+<p>Bonnie RJ, Stroud C, Breiner H, editors. Investing in the Health and Well-Being of Young Adults. Washington (DC): National Academies Press (US); 2015 Jan 27. 4, Education and Employment.&nbsp;Available from: https://www.ncbi.nlm.nih.gov/books/NBK284788/&nbsp;</p>
+<p>Esencan E, Simsek B, Seli E. Analysis of female demographics in the United States: life expectancy, education, employment, family building decisions, and fertility service utilization.&nbsp;Curr Opin Obstet Gynecol. 2021;33(3):170-177. doi:10.1097/GCO.0000000000000704&nbsp;</p>
+<p>Horowitz J. (2018). Relative Education and the Advantage of a College Degree.&nbsp;American sociological review,&nbsp;83(4), 771–801. https://doi.org/10.1177/0003122418785371&nbsp;</p>
+<p>Hugo, L. S. (2019). Predicting employment through machine learning. National Association of Colleges and Employers. Retrieved from <a href="https://www.naceweb.org/center/" class="uri">https://www.naceweb.org/center/</a>&nbsp;</p>
+<p>Goldin, C. (2014). Career and Family: Women's Century-Long Journey Toward Equity. American Economic Review.&nbsp;</p>
+<p>Muraca, F. (2014). How the geography of jobs affects unemployment: Why job accessibility is limited for some groups and what it means for anti-poverty policies. Econ Focus, Third Quarter 2014. <a href="https://www.richmondfed.org/publications/research/econ_focus/2014/q3/feature2" class="uri">https://www.richmondfed.org/publications/research/econ_focus/2014/q3/feature2</a>&nbsp;</p>
+<p>U.S. Bureau of Labor Statistics. (2024, May 21). Foreign-born workers: Labor force characteristics – 2023 (USDL-24-1008). U.S. Department of Labor. <a href="https://www.bls.gov/news.release/forbrn.htm" class="uri">https://www.bls.gov/news.release/forbrn.htm</a>&nbsp;</p>
+<p>&nbsp;</p>
+</section>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button', {
+    text: function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+  });
+  clipboard.on('success', function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  });
+  function tippyHover(el, contentFn) {
+    const config = {
+      allowHTML: true,
+      content: contentFn,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start'
+    };
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      return note.innerHTML;
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+</body></html>

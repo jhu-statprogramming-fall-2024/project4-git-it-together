@@ -1,0 +1,92 @@
+---
+title: "Data Cleaning"
+format: html
+editor: visual
+---
+
+## Quarto
+
+Quarto enables you to weave together content and executable code into a finished document. To learn more about Quarto see <https://quarto.org>.
+
+## Set Up
+
+```{r}
+# Loading packages
+library(blsAPI)
+library(blscrapeR)
+library(devtools)
+library(dplyr)
+library(tidyr)
+
+install_github("mikeasilva/blsAPI", force = TRUE)
+```
+
+## Variable Selection
+
+```{r}
+data <- c(
+  # Race
+  "LNU02000003",  # White
+  "LNU02000006",  # Black or African American
+  "LNU02032183",  # Asian
+  "LNU02000009",  # Other races
+
+  # Ethnicity
+  "LNU02032201",  # Hispanic or Latino
+  "LNU02032202",  # Non-Hispanic
+
+  # Gender
+  "LNU02000001",  # Male
+  "LNU02000002",  # Female
+
+  # Industry
+  "LNU04032227",  # Manufacturing
+  "LNU04032241",  # Healthcare
+  "LNU04032232",  # Construction
+  "LNU04032216",  # Retail Trade
+  "LNU04032244",  # Education and Health Services
+  "LNU04032236",  # Professional and Business Services
+
+  # Region
+  "LNU02000005",  # Northeast
+  "LNU02000006",  # Midwest
+  "LNU02000007",  # South
+  "LNU02000008",  # West
+
+  # Education Level
+  "LNU02027662",  # Less than high school diploma
+  "LNU02027664",  # High school graduates, no college
+  "LNU02027663",  # Some college or associate degree
+  "LNU02027665"   # Bachelor’s degree or higher
+)
+
+start_year <- 2022
+end_year <- 2024
+employment_data <- bls_api(data, startyear = start_year, endyear = end_year)
+```
+
+```{r}
+# Convert dataset to wide format 
+employment_data <- employment_data %>%
+  select(year, period, seriesID, value) %>%  
+  pivot_wider(names_from = seriesID, values_from = value) %>%  
+  arrange(year, period) 
+
+# View dataset
+View(employment_data)
+```
+
+```{r}
+employment_data <- employment_data %>%
+  mutate(
+    quarter = case_when(
+      period %in% c("M01", "M02", "M03") ~ "Q1",
+      period %in% c("M04", "M05", "M06") ~ "Q2",
+      period %in% c("M07", "M08", "M09") ~ "Q3",
+      period %in% c("M10", "M11", "M12") ~ "Q4"
+    )
+  )
+
+# View the modified dataset with the new column
+View(employment_data)
+```

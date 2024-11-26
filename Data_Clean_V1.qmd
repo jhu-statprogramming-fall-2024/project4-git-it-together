@@ -24,47 +24,38 @@ install_github("mikeasilva/blsAPI", force = TRUE)
 ## Variable Selection
 
 ```{r}
-# For "Employed" Population
 employment_data <- c(
-  # Race
+  # Race (unadjusted) 
   "LNU02000003",  # White
   "LNU02000006",  # Black or African American
   "LNU02032183",  # Asian
-  "LNU02000009",  # Other races
 
-  # Ethnicity
-  "LNU02032201",  # Hispanic or Latino
-  "LNU02032202",  # Non-Hispanic
-
-  # Gender
+  # Gender (unadjusted) 
   "LNU02000001",  # Male
   "LNU02000002",  # Female
 
-  # Industry
-  "LNU04032227",  # Manufacturing
-  "LNU04032241",  # Healthcare
-  "LNU04032232",  # Construction
-  "LNU04032216",  # Retail Trade
-  "LNU04032244",  # Education and Health Services
-  "LNU04032236",  # Professional and Business Services
-
-  # Region
-  "LNU02000005",  # Northeast
-  "LNU02000006",  # Midwest
-  "LNU02000007",  # South
-  "LNU02000008",  # West
+  # Industry (unadjusted) 
+  "LNU02034563",  # Manufacturing
+  "LNU02034562", # Construction 
+  "LNU02032209", # Farming, Fishing, and Forestry Occupations 
+  "LNU02034690", # Financial Activities Including Real Estate 
+  "LNU02034571", # Information
+  "LNU02034575", # Leisure and Hospitality
+  "LNU02034576", # Other Services
+  "LNU02034702", # Professional and Business Services 
+  "LNU02034579", # Public Administration 
 
   # Education Level
-  "LNU02027662",  # Less than high school diploma
-  "LNU02027664",  # High school graduates, no college
-  "LNU02027663",  # Some college or associate degree
-  "LNU02027665"   # Bachelor’s degree or higher
+  "LNU02027659",  # Less than high school diploma
+  "LNU02027660",  # High school graduates, no college
+  "LNU02027689",  # Some college or associate degree
+  "LNU02027662"   # Bachelor’s degree or higher
+
 )
 
 start_year <- 2022
 end_year <- 2024
 employment_data <- bls_api(employment_data, startyear = start_year, endyear = end_year)
-
 ```
 
 ```{r}
@@ -75,41 +66,32 @@ unemployment_data <- c(
   "LNU03000003",  # White
   "LNU03000006",  # Black or African American
   "LNU03032183",  # Asian
-  "LNU03000009",  # Other races
-
-  # Ethnicity
-  "LNU03032201",  # Hispanic or Latino
-  "LNU03032202",  # Non-Hispanic
 
   # Gender
   "LNU03000001",  # Male
   "LNU03000002",  # Female
 
-  # Industry
-  "LNU03032227",  # Manufacturing
-  "LNU03032241",  # Healthcare
-  "LNU03032232",  # Construction
-  "LNU03032216",  # Retail Trade
-  "LNU03032244",  # Education and Health Services
-  "LNU03032236",  # Professional and Business Services
-  
-  # Region
-  "LNU03000005",  # Northeast
-  "LNU03000006",  # Midwest
-  "LNU03000007",  # South
-  "LNU03000008",  # West
+  # Industry (unadjusted) 
+  "LNU03032232",  # Manufacturing
+  "LNU03032231", # Construction 
+  "LNU03032223", # Farming, Fishing, and Forestry Occupations 
+  "LNU03032238", # Financial Activities Including Real Estate 
+  "LNU04032237", # Information
+  "LNU03034530", # Leisure and Hospitality
+  "LNU03034538", # Other Services
+  "LNU03034514", # Professional and Business Services 
+  "LNU03035220", # Public Administration 
 
   # Education Level
-  "LNU03027662",  # Less than high school diploma
-  "LNU03027664",  # High school graduates, no college
-  "LNU03027663",  # Some college or associate degree
-  "LNU03027665"   # Bachelor’s degree or higher
+  "LNU03027663",  # Less than high school diploma
+  "LNU03027660",  # High school graduates, no college
+  "LNU03027665",  # Some college or associate degree
+  "LNU03027662"   # Bachelor’s degree or higher
 )
 
 start_year <- 2022
 end_year <- 2024
 unemployment_data <- bls_api(unemployment_data, startyear = start_year, endyear = end_year)
-
 ```
 
 ```{r}
@@ -135,31 +117,41 @@ View(unemployment_data)
 ```
 
 ```{r}
-# "Employed": Change time data from month to quarter
-employment_data <- employment_data %>%
-  mutate(
-    quarter = case_when(
-      period %in% c("M01", "M02", "M03") ~ "Q1",
-      period %in% c("M04", "M05", "M06") ~ "Q2",
-      period %in% c("M07", "M08", "M09") ~ "Q3",
-      period %in% c("M10", "M11", "M12") ~ "Q4"
-    )
+# "Employed": Change time data from month to annual
+# Subset data to include only relevant seriesIDs and valid periods
+relevant_series <- c(
+  "LNU03000003",  # White
+  "LNU03000006",  # Black or African American
+  "LNU03032183",  # Asian
+  "LNU03000009",  # Other races
+  "LNU03032201",  # Hispanic or Latino
+  "LNU03032202",  # Non-Hispanic
+  "LNU03000001",  # Male
+  "LNU03000002",  # Female
+  "LNU03032227",  # Manufacturing
+  "LNU03032241",  # Healthcare
+  "LNU03032232",  # Construction
+  "LNU03032216",  # Retail Trade
+  "LNU03032244",  # Education and Health Services
+  "LNU03032236"   # Professional and Business Services
+)
+
+employment_annual <- employment_data %>%
+  # Filter for relevant series and valid months (M01-M12)
+  filter(seriesID %in% relevant_series, period %in% paste0("M", sprintf("%02d", 1:12))) %>%
+  # Group by year and seriesID
+  group_by(year, seriesID) %>%
+  # Summarize: Calculate the annual sum of the values for each variable
+  summarize(
+    annual_sum = sum(value, na.rm = TRUE),
+    .groups = "drop"  # Ungroup the result
   )
 
-## View the modified dataset with the new column
-View(employment_data)
+# View the summarized dataset
+View(employment_annual)
+```
 
-# "Unemployed": Change time data from month to quarter
-unemployment_data <- unemployment_data %>%
-  mutate(
-    quarter = case_when(
-      period %in% c("M01", "M02", "M03") ~ "Q1",
-      period %in% c("M04", "M05", "M06") ~ "Q2",
-      period %in% c("M07", "M08", "M09") ~ "Q3",
-      period %in% c("M10", "M11", "M12") ~ "Q4"
-    )
-  )
+```{r}
+# Adding Regional Data (Geographic based on Annual Data)
 
-## View the modified dataset with the new column
-View(unemployment_data)
 ```

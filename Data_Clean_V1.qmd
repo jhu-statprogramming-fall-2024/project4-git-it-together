@@ -24,7 +24,8 @@ install_github("mikeasilva/blsAPI", force = TRUE)
 ## Variable Selection
 
 ```{r}
-data <- c(
+# For "Employed" Population
+employment_data <- c(
   # Race
   "LNU02000003",  # White
   "LNU02000006",  # Black or African American
@@ -62,21 +63,79 @@ data <- c(
 
 start_year <- 2022
 end_year <- 2024
-employment_data <- bls_api(data, startyear = start_year, endyear = end_year)
+employment_data <- bls_api(employment_data, startyear = start_year, endyear = end_year)
+
 ```
 
 ```{r}
-# Convert dataset to wide format 
+# For "Unemployed" Population
+
+unemployment_data <- c(
+  # Race
+  "LNU03000003",  # White
+  "LNU03000006",  # Black or African American
+  "LNU03032183",  # Asian
+  "LNU03000009",  # Other races
+
+  # Ethnicity
+  "LNU03032201",  # Hispanic or Latino
+  "LNU03032202",  # Non-Hispanic
+
+  # Gender
+  "LNU03000001",  # Male
+  "LNU03000002",  # Female
+
+  # Industry
+  "LNU03032227",  # Manufacturing
+  "LNU03032241",  # Healthcare
+  "LNU03032232",  # Construction
+  "LNU03032216",  # Retail Trade
+  "LNU03032244",  # Education and Health Services
+  "LNU03032236",  # Professional and Business Services
+  
+  # Region
+  "LNU03000005",  # Northeast
+  "LNU03000006",  # Midwest
+  "LNU03000007",  # South
+  "LNU03000008",  # West
+
+  # Education Level
+  "LNU03027662",  # Less than high school diploma
+  "LNU03027664",  # High school graduates, no college
+  "LNU03027663",  # Some college or associate degree
+  "LNU03027665"   # Bachelor’s degree or higher
+)
+
+start_year <- 2022
+end_year <- 2024
+unemployment_data <- bls_api(unemployment_data, startyear = start_year, endyear = end_year)
+
+```
+
+```{r}
+# "Employed": Convert dataset to wide format 
 employment_data <- employment_data %>%
   select(year, period, seriesID, value) %>%  
   pivot_wider(names_from = seriesID, values_from = value) %>%  
   arrange(year, period) 
 
-# View dataset
+## View dataset
 View(employment_data)
+
+# "Unemployed": Convert dataset to wide format 
+
+unemployment_data <- unemployment_data %>%
+  select(year, period, seriesID, value) %>%  
+  pivot_wider(names_from = seriesID, values_from = value) %>%  
+  arrange(year, period) 
+
+## View dataset
+View(unemployment_data)
+
 ```
 
 ```{r}
+# "Employed": Change time data from month to quarter
 employment_data <- employment_data %>%
   mutate(
     quarter = case_when(
@@ -87,6 +146,20 @@ employment_data <- employment_data %>%
     )
   )
 
-# View the modified dataset with the new column
+## View the modified dataset with the new column
 View(employment_data)
+
+# "Unemployed": Change time data from month to quarter
+unemployment_data <- unemployment_data %>%
+  mutate(
+    quarter = case_when(
+      period %in% c("M01", "M02", "M03") ~ "Q1",
+      period %in% c("M04", "M05", "M06") ~ "Q2",
+      period %in% c("M07", "M08", "M09") ~ "Q3",
+      period %in% c("M10", "M11", "M12") ~ "Q4"
+    )
+  )
+
+## View the modified dataset with the new column
+View(unemployment_data)
 ```

@@ -53,8 +53,8 @@ employment_data <- c(
 
 )
 
-start_year <- 2022
-end_year <- 2024
+start_year <- 2021
+end_year <- 2023
 employment_data <- bls_api(employment_data, startyear = start_year, endyear = end_year)
 ```
 
@@ -89,8 +89,8 @@ unemployment_data <- c(
   "LNU03027662"   # Bachelor’s degree or higher
 )
 
-start_year <- 2022
-end_year <- 2024
+start_year <- 2021
+end_year <- 2023
 unemployment_data <- bls_api(unemployment_data, startyear = start_year, endyear = end_year)
 ```
 
@@ -104,8 +104,10 @@ employment_data <- employment_data %>%
 ## View dataset
 View(employment_data)
 
-# "Unemployed": Convert dataset to wide format 
+```
 
+```{r}
+# "Unemployed": Convert dataset to wide format 
 unemployment_data <- unemployment_data %>%
   select(year, period, seriesID, value) %>%  
   pivot_wider(names_from = seriesID, values_from = value) %>%  
@@ -113,45 +115,41 @@ unemployment_data <- unemployment_data %>%
 
 ## View dataset
 View(unemployment_data)
-
 ```
 
 ```{r}
 # "Employed": Change time data from month to annual
-# Subset data to include only relevant seriesIDs and valid periods
-relevant_series <- c(
-  "LNU03000003",  # White
-  "LNU03000006",  # Black or African American
-  "LNU03032183",  # Asian
-  "LNU03000009",  # Other races
-  "LNU03032201",  # Hispanic or Latino
-  "LNU03032202",  # Non-Hispanic
-  "LNU03000001",  # Male
-  "LNU03000002",  # Female
-  "LNU03032227",  # Manufacturing
-  "LNU03032241",  # Healthcare
-  "LNU03032232",  # Construction
-  "LNU03032216",  # Retail Trade
-  "LNU03032244",  # Education and Health Services
-  "LNU03032236"   # Professional and Business Services
-)
+employment_data <- employment_data %>%
+  group_by(year) %>%
+  summarize(across(starts_with("LNU"), ~ sum(.x, na.rm = TRUE)))
 
-employment_annual <- employment_data %>%
-  # Filter for relevant series and valid months (M01-M12)
-  filter(seriesID %in% relevant_series, period %in% paste0("M", sprintf("%02d", 1:12))) %>%
-  # Group by year and seriesID
-  group_by(year, seriesID) %>%
-  # Summarize: Calculate the annual sum of the values for each variable
-  summarize(
-    annual_sum = sum(value, na.rm = TRUE),
-    .groups = "drop"  # Ungroup the result
-  )
-
-# View the summarized dataset
-View(employment_annual)
+print(employment_data)
 ```
 
 ```{r}
-# Adding Regional Data (Geographic based on Annual Data)
+# "Unemployed": Change time data from month to annual
+unemployment_data <- unemployment_data %>%
+  group_by(year) %>%
+  summarize(across(starts_with("LNU"), ~ sum(.x, na.rm = TRUE)))
+
+print(unemployment_data)
+```
+
+```{r}
+# "Employment": Adding New Variable (outcome --> Employed = 1; Unemployed = 0)
+employment_data <- employment_data %>%
+  mutate(employment = 1)
+
+# View the updated dataset
+View(employment_data)
+```
+
+```{r}
+# "Unemployment": Adding New Variable (outcome --> Employed = 1; Unemployed = 0)
+unemployment_data <- unemployment_data %>%
+  mutate(employment = 0)
+
+# View the updated dataset
+View(unemployment_data)
 
 ```

@@ -8,11 +8,11 @@ editor: visual
 
 ```{r}
 # Loading packages
-suppressPackageStartupMessages(library(blsAPI))
-suppressPackageStartupMessages(library(blscrapeR))
-suppressPackageStartupMessages(library(devtools))
-suppressPackageStartupMessages(library(dplyr))
-suppressPackageStartupMessages(library(tidyr))
+library(blsAPI)
+library(blscrapeR)
+library(devtools)
+library(dplyr)
+library(tidyr)
 
 install_github("mikeasilva/blsAPI", force = TRUE)
 ```

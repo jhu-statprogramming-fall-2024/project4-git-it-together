@@ -192,6 +192,40 @@ employment_data <- employment_data %>%
 print(employment_data)
 ```
 
+```{r}
+unemployment_data <- unemployment_data %>%
+  group_by(year) %>%
+  mutate(
+    race_total = LNU03000003 + LNU03000006 + LNU03032183,  
+    white = LNU03000003 / race_total, 
+    black = LNU03000006 / race_total,  
+    asian = LNU03032183 / race_total,   
+    
+    gender = LNU03000001 + LNU03000002, 
+    male = LNU03000001 / gender, 
+    female = LNU03000002 / gender, 
+    
+    industry = LNU03032232 + LNU03032231 + LNU03032223 + LNU03032238 + 
+      LNU04032237 + LNU03034530 + LNU03034538 + LNU03034514,
+    manufacturing = LNU03032232 / industry, 
+    construction = LNU03032231 / industry,
+    farming = LNU03032223 / industry,
+    financial = LNU03032238 / industry, 
+    information = LNU04032237 / industry, 
+    leisure = LNU03034530 / industry,
+    other = LNU03034538 / industry, 
+    professional = LNU03034514 / industry, 
+    
+    education = LNU03027663 + LNU03027660 + LNU03027665 + LNU03027662, 
+    less_hs = LNU03027663 / education,
+    hs = LNU03027660 / education,
+    college = LNU03027665 / education,
+    higher = LNU03027662 / education
+  )
+
+print(unemployment_data)
+```
+
 6.  Add in average hourly income per industry
 
 ```{r}
@@ -236,7 +270,7 @@ print(income_data)
 
 ```{r}
 # Call in region data 
-regions <- c(
+employment_regions <- c(
   # Region (unadjusted_native)
   "LNU0207341391",  # Northeast
   "LNU0207341392",  # Midwest
@@ -253,26 +287,124 @@ regions <- c(
 start_year <- 2021
 end_year <- 2023
 
-regions <- bls_api(regions, startyear = start_year, endyear = end_year)
+employment_regions <- bls_api(employment_regions, startyear = start_year, endyear = end_year)
+```
+
+```{r}
+# Call in region data 
+unemployment_regions <- c(
+  "LNU0307341391",  # Northeast (Native)
+  "LNU0307341392",  # Midwest (Native)
+  "LNU0307341393",  # South (Native)
+  "LNU0307341394",  # West (Native)
+  
+  "LNU0307339591",  # Northeast (Foreign)
+  "LNU0307339592",  # Midwest (Foreign)
+  "LNU0307339593",  # South (Foreign)
+  "LNU0307339594"   # West (Foreign)
+)
+
+start_year <- 2021
+end_year <- 2023
+
+unemployment_regions <- bls_api(unemployment_regions, startyear = start_year, endyear = end_year)
 ```
 
 ```{r}
 # Convert dataset to wide format
-regions <- regions %>%
+employment_regions <- employment_regions %>%
   select(year, period, seriesID, value) %>%  
   pivot_wider(names_from = seriesID, values_from = value) %>%  
   arrange(year, period) 
 
-View(regions)
+View(employment_regions)
 ```
 
-8.  Combine all the datasets
+```{r}
+# Convert dataset to wide format
+unemployment_regions <- unemployment_regions %>%
+  select(year, period, seriesID, value) %>%  
+  pivot_wider(names_from = seriesID, values_from = value) %>%  
+  arrange(year, period) 
+
+View(unemployment_regions)
+```
+
+8.  Combine datasets for the employed and unemployed da
 
 ```{r}
-combined_data <- regions %>%
-  full_join(income_data, by = "year") %>%
-  full_join(employment_data, by = "year")
+combined_employment_data <- employment_regions %>%
+  left_join(employment_data, by = "year") %>%
+  left_join(income_data, by = "year")
+```
 
-# View the combined dataset
-print(combined_data)
+```{r}
+combined_unemployment_data <- unemployment_regions %>%
+  left_join(unemployment_data, by = "year")
+```
+
+9.  Rename variables to improve readability
+
+```{r}
+combined_employment_data <- combined_employment_data %>%
+  
+  # Remove specified columns
+  select(-LNU02000003, -LNU02000006, -LNU02032183, -LNU02000001, -LNU02000002, 
+         -LNU02034563, -LNU02034562, -LNU02032209, -LNU02034690, -LNU02034571, 
+         -LNU02034575, -LNU02034576, -LNU02034702, -LNU02027659, -LNU02027660, 
+         -LNU02027689, -LNU02027662) %>%
+  
+  # Rename specific columns
+  rename(
+    native_northeast = LNU0207341391,
+    native_midwest = LNU0207341392,
+    native_south = LNU0207341393, 
+    native_west = LNU0207341394, 
+    foreign_northeast = LNU0207339591, 
+    foreign_midwest = LNU0207339592, 
+    foreign_south = LNU0207339593, 
+    foriegn_west = LNU0207339594, 
+    income_manufacturing = CEU3000000003,
+    income_construction = CEU2000000003, 
+    income_farming = CEU4244525003,
+    income_financial = CEU5500000003,
+    income_information = CEU5000000003, 
+    income_leisure = CEU7000000003, 
+    income_other = CEU8000000003,
+    income_professional = CEU6000000003
+  )
+
+View(combined_employment_data)
+```
+
+```{r}
+combined_unemployment_data <- combined_unemployment_data %>%
+  
+  # Remove specified columns
+  select(-LNU03000003, -LNU03000006, -LNU03032183, -LNU03000001, -LNU03000002, 
+         -LNU03032232, -LNU03032231, -LNU03032223, -LNU03032238, -LNU04032237, 
+         -LNU03034530, -LNU03034538, -LNU03034514, -LNU03027663, -LNU03027660, 
+         -LNU03027665, -LNU03027662) %>%
+  
+  # Rename specific columns
+  rename(
+    native_northeast = LNU0307341391,
+    native_midwest = LNU0307341392,
+    native_south = LNU0307341393, 
+    native_west = LNU0307341394, 
+    foreign_northeast = LNU0307339591, 
+    foreign_midwest = LNU0307339592, 
+    foreign_south = LNU0307339593, 
+    foriegn_west = LNU0307339594
+  )
+
+View(combined_unemployment_data)
+```
+
+10. Final combination of datasets
+
+```{r}
+combined_final <- bind_rows(combined_employment_data, combined_unemployment_data)
+
+View(combined_final)
 ```

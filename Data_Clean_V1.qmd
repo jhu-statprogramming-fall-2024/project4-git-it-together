@@ -8,7 +8,7 @@ editor: visual
 
 ```{r}
 # Loading packages
-library(blsAPI)
+suppressPackageStartupMessages(library(blsAPI))
 library(blscrapeR)
 library(devtools)
 library(dplyr)

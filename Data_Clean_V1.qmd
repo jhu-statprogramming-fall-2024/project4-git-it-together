@@ -4,10 +4,6 @@ format: html
 editor: visual
 ---
 
-## Quarto
-
-Quarto enables you to weave together content and executable code into a finished document. To learn more about Quarto see <https://quarto.org>.
-
 ## Set Up
 
 ```{r}
@@ -21,9 +17,12 @@ library(tidyr)
 install_github("mikeasilva/blsAPI", force = TRUE)
 ```
 
-## Variable Selection
+## Dataset
+
+1.  Variable Selection
 
 ```{r}
+# For "Employed" Population
 employment_data <- c(
   # Race (unadjusted) 
   "LNU02000003",  # White
@@ -36,14 +35,13 @@ employment_data <- c(
 
   # Industry (unadjusted) 
   "LNU02034563",  # Manufacturing
-  "LNU02034562", # Construction 
-  "LNU02032209", # Farming, Fishing, and Forestry Occupations 
-  "LNU02034690", # Financial Activities Including Real Estate 
-  "LNU02034571", # Information
-  "LNU02034575", # Leisure and Hospitality
-  "LNU02034576", # Other Services
-  "LNU02034702", # Professional and Business Services 
-  "LNU02034579", # Public Administration 
+  "LNU02034562",  # Construction 
+  "LNU02032209",  # Farming, Fishing, and Forestry Occupations 
+  "LNU02034690",  # Financial Activities Including Real Estate 
+  "LNU02034571",  # Information
+  "LNU02034575",  # Leisure and Hospitality
+  "LNU02034576",  # Other Services
+  "LNU02034702",  # Professional and Business Services 
 
   # Education Level
   "LNU02027659",  # Less than high school diploma
@@ -60,7 +58,6 @@ employment_data <- bls_api(employment_data, startyear = start_year, endyear = en
 
 ```{r}
 # For "Unemployed" Population
-
 unemployment_data <- c(
   # Race
   "LNU03000003",  # White
@@ -73,14 +70,13 @@ unemployment_data <- c(
 
   # Industry (unadjusted) 
   "LNU03032232",  # Manufacturing
-  "LNU03032231", # Construction 
-  "LNU03032223", # Farming, Fishing, and Forestry Occupations 
-  "LNU03032238", # Financial Activities Including Real Estate 
-  "LNU04032237", # Information
-  "LNU03034530", # Leisure and Hospitality
-  "LNU03034538", # Other Services
-  "LNU03034514", # Professional and Business Services 
-  "LNU03035220", # Public Administration 
+  "LNU03032231",  # Construction 
+  "LNU03032223",  # Farming, Fishing, and Forestry Occupations 
+  "LNU03032238",  # Financial Activities Including Real Estate 
+  "LNU04032237",  # Information
+  "LNU03034530",  # Leisure and Hospitality
+  "LNU03034538",  # Other Services
+  "LNU03034514",  # Professional and Business Services 
 
   # Education Level
   "LNU03027663",  # Less than high school diploma
@@ -94,31 +90,32 @@ end_year <- 2023
 unemployment_data <- bls_api(unemployment_data, startyear = start_year, endyear = end_year)
 ```
 
+2.  Convert dataset to wide format
+
 ```{r}
-# "Employed": Convert dataset to wide format 
+# "Employed": 
 employment_data <- employment_data %>%
   select(year, period, seriesID, value) %>%  
   pivot_wider(names_from = seriesID, values_from = value) %>%  
   arrange(year, period) 
 
-## View dataset
 View(employment_data)
-
 ```
 
 ```{r}
-# "Unemployed": Convert dataset to wide format 
+# "Unemployed": 
 unemployment_data <- unemployment_data %>%
   select(year, period, seriesID, value) %>%  
   pivot_wider(names_from = seriesID, values_from = value) %>%  
   arrange(year, period) 
 
-## View dataset
 View(unemployment_data)
 ```
 
+3.  Change time period from month to annual
+
 ```{r}
-# "Employed": Change time data from month to annual
+# "Employed": 
 employment_data <- employment_data %>%
   group_by(year) %>%
   summarize(across(starts_with("LNU"), ~ sum(.x, na.rm = TRUE)))
@@ -127,7 +124,7 @@ print(employment_data)
 ```
 
 ```{r}
-# "Unemployed": Change time data from month to annual
+# "Unemployed": 
 unemployment_data <- unemployment_data %>%
   group_by(year) %>%
   summarize(across(starts_with("LNU"), ~ sum(.x, na.rm = TRUE)))
@@ -135,21 +132,147 @@ unemployment_data <- unemployment_data %>%
 print(unemployment_data)
 ```
 
+4.  Add new employment status variable
+
 ```{r}
-# "Employment": Adding New Variable (outcome --> Employed = 1; Unemployed = 0)
+# "Employment": outcome --> Employed = 1
 employment_data <- employment_data %>%
   mutate(employment = 1)
 
-# View the updated dataset
 View(employment_data)
 ```
 
 ```{r}
-# "Unemployment": Adding New Variable (outcome --> Employed = 1; Unemployed = 0)
+# "Unemployment": outcome --> Unemployed = 0
 unemployment_data <- unemployment_data %>%
   mutate(employment = 0)
 
-# View the updated dataset
 View(unemployment_data)
+```
 
+5.  Calculate percentage for each variable
+
+::: callout-note
+```         
+Percentage were calculated and used instead of sample sizes due to missing data in different variables.
+```
+:::
+
+```{r}
+employment_data <- employment_data %>%
+  group_by(year) %>%
+  mutate(
+    race_total = LNU02000003 + LNU02000006 + LNU02032183,  
+    white = LNU02000003 / race_total, 
+    black = LNU02000006 / race_total,  
+    asian = LNU02032183 / race_total,   
+    
+    gender = LNU02000001 + LNU02000002, 
+    male = LNU02000001 / gender, 
+    female = LNU02000002 / gender, 
+    
+    industry = LNU02034563 + LNU02034562 + LNU02032209 + LNU02034690 + 
+      LNU02034571 + LNU02034575 + LNU02034576 + LNU02034702,
+    manufacturing = LNU02034563 / industry, 
+    construction = LNU02034562 / industry,
+    farming = LNU02032209 / industry,
+    financial = LNU02034690 / industry, 
+    information = LNU02034571 / industry, 
+    leisure = LNU02034575 / industry,
+    other = LNU02034576 / industry, 
+    professional = LNU02034702 / industry, 
+    
+    education = LNU02027659 + LNU02027660 + LNU02027689 + LNU02027662, 
+    less_hs = LNU02027659 / education,
+    hs = LNU02027660 / education,
+    college = LNU02027689 / education,
+    higher = LNU02027662 / education
+  )
+
+print(employment_data)
+```
+
+6.  Add in average hourly income per industry
+
+```{r}
+# Call in average hourly income data 
+income_data <- c(
+  "CEU3000000003", # Manufacturing
+  "CEU2000000003", # Construction
+  "CEU4244525003", # Farming, Fishing, and Forestry Occupations
+  "CEU5500000003", # Financial Activities Including Real Estate
+  "CEU5000000003", # Information
+  "CEU7000000003", # Leisure and Hospitality
+  "CEU8000000003", # Other Services
+  "CEU6000000003"  # Professional and Business Services
+)
+
+start_year <- 2021
+end_year <- 2023
+
+income_data <- bls_api(income_data, startyear = start_year, endyear = end_year)
+```
+
+```{r}
+# Convert dataset to wide format
+income_data <- income_data %>%
+  select(year, period, seriesID, value) %>%  
+  pivot_wider(names_from = seriesID, values_from = value) %>%  
+  arrange(year, period) 
+
+View(income_data)
+```
+
+```{r}
+# Change time period from month to annual
+income_data <- income_data %>%
+  group_by(year) %>%
+  summarize(across(matches("CEU"), ~ sum(.x, na.rm = TRUE) / 12))
+
+print(income_data)
+```
+
+7.  Add in region variable
+
+```{r}
+# Call in region data 
+regions <- c(
+  # Region (unadjusted_native)
+  "LNU0207341391",  # Northeast
+  "LNU0207341392",  # Midwest
+  "LNU0207341393",  # South
+  "LNU0207341394",  # West
+
+  # Region (unadjusted_foreign)
+  "LNU0207339591",  # Northeast
+  "LNU0207339592",  # Midwest
+  "LNU0207339593",  # South
+  "LNU0207339594"   # West
+)
+
+start_year <- 2021
+end_year <- 2023
+
+regions <- bls_api(regions, startyear = start_year, endyear = end_year)
+```
+
+```{r}
+# Convert dataset to wide format
+regions <- regions %>%
+  select(year, period, seriesID, value) %>%  
+  pivot_wider(names_from = seriesID, values_from = value) %>%  
+  arrange(year, period) 
+
+View(regions)
+```
+
+8.  Combine all the datasets
+
+```{r}
+combined_data <- regions %>%
+  full_join(income_data, by = "year") %>%
+  full_join(employment_data, by = "year")
+
+# View the combined dataset
+print(combined_data)
 ```

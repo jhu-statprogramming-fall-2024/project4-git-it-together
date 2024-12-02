@@ -9,17 +9,17 @@ editor: visual
 ```{r}
 # Loading packages
 suppressPackageStartupMessages(library(blsAPI))
-library(blscrapeR)
-library(devtools)
-library(dplyr)
-library(tidyr)
+suppressPackageStartupMessages(library(blscrapeR))
+suppressPackageStartupMessages(library(devtools))
+suppressPackageStartupMessages(library(dplyr))
+suppressPackageStartupMessages(library(tidyr))
 
 install_github("mikeasilva/blsAPI", force = TRUE)
 ```
 
 ## Dataset
 
-1.  Variable Selection
+1.  Variable selection
 
 ```{r}
 # For "Employed" Population
@@ -226,7 +226,7 @@ unemployment_data <- unemployment_data %>%
 print(unemployment_data)
 ```
 
-6.  Add in average hourly income per industry
+6.  Add in average hourly income per industry (only available for employed groups)
 
 ```{r}
 # Call in average hourly income data 
@@ -330,7 +330,7 @@ unemployment_regions <- unemployment_regions %>%
 View(unemployment_regions)
 ```
 
-8.  Combine datasets for the employed and unemployed da
+8.  Combine datasets for the employed and unemployed
 
 ```{r}
 combined_employment_data <- employment_regions %>%
@@ -343,7 +343,7 @@ combined_unemployment_data <- unemployment_regions %>%
   left_join(unemployment_data, by = "year")
 ```
 
-9.  Rename variables to improve readability
+9.  Rename and remove variables to improve readability
 
 ```{r}
 combined_employment_data <- combined_employment_data %>%

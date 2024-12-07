@@ -1,0 +1,679 @@
+---
+title: "Final Project: Machine Learning Model Building and Results"
+author: "Nhi Dinh"
+format: html
+editor: visual
+---
+
+## 
+
+```{r setup, include=FALSE, global = TRUE}
+library(tidyverse)
+library(lme4)
+library(caret)
+library(lmtest)
+
+knitr::opts_chunk$set(echo = TRUE)
+
+# setwd("C:/Users/nhidi/OneDrive - Johns Hopkins/PhD/courses/second-term/Programming/final-project/data")
+p1_wide <- readxl::read_excel("service_occupation_race.xlsx")
+```
+
+## Part 1
+
+### Data preparation
+
+```{r}
+p1_wide <- p1_wide %>%
+  select(-period)
+p1_long <- tidyr::pivot_longer(
+  p1_wide,
+  cols = -year,  # Exclude the 'year' column from pivoting
+  names_to = "variable",  # Name for the new column holding the old column names
+  values_to = "value"  # Name for the new column holding the values
+)
+
+# Split the 'variable' column into 'race' and 'sex'
+p1_long <- p1_long %>% 
+  separate(variable, into = c("race", "sex"), sep = "_")
+```
+
+### Linear model
+
+#### Visualization
+
+```{r}
+plot1 <- p1_long %>%
+  ggplot(aes(x = year, y = value, color = race, linetype = sex,  group = interaction(race, sex))) +
+  geom_line() +
+  geom_point()  +
+  labs(color = "Race", linetype = "Sex") +  # Add legend labels
+  theme_bw() +
+  ylab("Mean quarterly income") +
+  xlab("Year") 
+plot1
+```
+
+#### Models
+
+```{r}
+model1 <- lm(value ~ year + race + sex, data = p1_long)
+summary(model1)
+
+```
+
+Machine learning model training
+
+```{r}
+#Split the data into training and test sets
+# Set seed for reproducibility
+set.seed(12062024)
+
+# Create the index for 80% training and 20% testing
+train_index <- createDataPartition(p1_long$value, p = 0.8, list = FALSE)
+
+# Split the data
+train_data <- p1_long[train_index, ]
+test_data <- p1_long[-train_index, ]
+
+#Machine learning model: Linear regression model to predict mean quarterly income 
+# Define the training control (10-fold cross-validation)
+train_control <- trainControl(method = "cv", number = 10)
+#Train the model using caret or tiny models
+lm_model <- train(value ~ year + race + sex, 
+                   data = train_data,
+                   method = "lm",      # Custom model method
+                   trControl = train_control)
+```
+
+```{r}
+# Understand model results
+summary(lm_model)
+
+# Assess the model performance both the training and test dataset using Root mean squared error (RMSE)
+
+## Make predictions on the test set
+predictions <- predict(lm_model, newdata = test_data)
+
+## Combine actual vs predicted values
+results <- data.frame(Actual = test_data$value, Predicted = predictions)
+
+## View the results
+head(results)
+
+## Calculate RMSE, R-squared, and MAE
+model_eval <- postResample(predictions, test_data$value)
+
+## View performance metrics
+summary(p1_long$value)
+
+print(model_eval)
+```
+
+Data frame to predict the outcome up to 2050
+
+```{r}
+# Define the ranges for each predictor
+years <- 2025:2050
+races <- c("black", "white", "asian")
+sexes <- c("women", "men")
+
+# Create all combinations of year, race, and sex
+future_data <- expand.grid(
+  year = years,
+  race = races,
+  sex = sexes
+)
+
+```
+
+### Predict outcome up to 2050
+
+```{r}
+# Predict outcomes for future_data
+future_data$predicted_value <- predict(lm_model, newdata = future_data)
+
+# View predictions
+print(future_data)
+# <- Embed this new data frame in the dashboard 
+```
+
+## Part 1b: Only include gender data in the model
+
+```{r}
+p1b_wide <- readxl::read_excel("service_occupation_annual.xlsx")
+```
+
+### Data preparation
+
+```{r}
+p1b_long <- tidyr::pivot_longer(
+  p1b_wide,
+  cols = -year,  # Exclude the 'year' column from pivoting
+  names_to = "sex",  # Name for the new column holding the old column names
+  values_to = "value"  # Name for the new column holding the values
+)
+
+#Update name 
+p1b_long$sex[p1b_long$sex == "a_women"] <- "women"
+p1b_long$sex[p1b_long$sex == "a_men"] <- "men"
+ 
+```
+
+### Linear model
+
+#### Visualization
+
+```{r}
+plot2 <- p1b_long %>%
+  ggplot(aes(x = year, y = value, linetype = sex)) +
+  geom_line() +
+  geom_point()  +
+  labs(linetype = "Sex") +  # Add legend labels
+  theme_bw() +
+  ylab("Mean quarterly income") +
+  xlab("Year") 
+plot2
+```
+
+#### Models
+
+```{r}
+model1b <- lm(value ~ year + sex, data = p1b_long)
+summary(model1b)
+```
+
+Machine learning model training
+
+```{r}
+#Split the data into training and test sets
+# Set seed for reproducibility
+set.seed(12062024)
+
+# Create the index for 80% training and 20% testing
+train_index <- createDataPartition(p1b_long$value, p = 0.8, list = FALSE)
+
+# Split the data
+train_b_data <- p1b_long[train_index, ]
+test_b_data <- p1b_long[-train_index, ]
+
+#Machine learning model: Linear regression model to predict a country's GINI inedex 
+# Define the training control (10-fold cross-validation)
+train_b_control <- trainControl(method = "cv", number = 10)
+#Train the model using caret or tiny models
+lm_model_b <- train(value ~ year + sex, 
+                   data = train_b_data,
+                   method = "lm",      
+                   trControl = train_b_control)
+```
+
+```{r}
+# Understand model results
+summary(lm_model_b)
+
+# Assess the model performance both the training and test dataset using Root mean squared error (RMSE)
+
+## Make predictions on the test set
+predictions_b <- predict(lm_model_b, newdata = test_b_data)
+
+## Combine actual vs predicted values
+results_b <- data.frame(Actual = test_b_data$value, Predicted = predictions_b)
+
+## View the results
+head(results_b)
+
+## Calculate RMSE, R-squared, and MAE
+model_eval_b <- postResample(predictions_b, test_b_data$value)
+
+## View performance metrics
+summary(p1b_long$value)
+
+print(model_eval_b)
+```
+
+Data frame to predict the outcome up to 2050
+
+```{r}
+# Create all combinations of year, race, and sex
+future_data_b <- expand.grid(
+  year = years,
+  sex = sexes
+)
+
+```
+
+### Predict outcome up to 2050
+
+```{r}
+# Predict outcomes for future_data
+future_data_b$predicted_value <- predict(lm_model_b, newdata = future_data_b)
+
+# View predictions
+print(future_data_b)
+# save(future_data_b, file = "future_data_b.RData")
+```
+
+# Part 2: Education Industry
+
+By industry, 12 month percentage employment, region
+
+Ø Predict / Outcome (Y) : employment change
+
+Ø Variables / Predictors (X) : year, state
+
+```{r}
+# setwd("C:/Users/nhidi/OneDrive - Johns Hopkins/PhD/courses/second-term/Programming/final-project/data")
+p1_education <- readxl::read_excel("education.xlsx")
+
+str(p1_education$year_quarter)
+# Step 1: Separate year and quarter
+p1_education <- p1_education %>%
+  separate(year_quarter, into = c("year", "quarter"), sep = "_Q_")
+
+# Step 2: Create ordered factor
+p1_education <- p1_education %>%
+  mutate(
+    year_quarter_factor = factor(
+      paste(year, quarter, sep = "_Q_"),  # Combine year and quarter
+      levels = unique(paste(year, quarter, sep = "_Q_")),  # Ensure order by occurrence
+      ordered = TRUE
+    )
+  )
+
+
+str(p1_education$year_quarter_factor)
+p1_education$year_quarter_cont <- as.numeric(p1_education$year_quarter_factor)
+str(p1_education$year_quarter_cont)
+# Group data by average change by year
+#p1_education <- p1_education %>%
+#  group_by(state, year) %>%
+#  reframe(
+#    annual_change = mean(oty_month3_emplvl_pct_chg, na.rm = TRUE)
+#  )
+
+#p1_education$year <- as.numeric(p1_education$year)
+
+```
+
+## Model building
+
+### Visualization
+
+```{r}
+plot3 <- p1_education %>%
+  ggplot(aes(x = year_quarter_factor, y = oty_month3_emplvl_pct_chg, color = state, group = state)) +
+  geom_line() +
+  theme_bw() +
+  ylab("% Job change") +
+  xlab("Year")  +
+  theme(legend.position = "none") +
+   scale_x_discrete(guide = guide_axis(angle = 90)) #
+plot3
+```
+
+```{r}
+#Treat year/quarter as continuous, starting at 2014 Q1 =1, 2014 Q2 = 2
+model_education <- lm(oty_month3_emplvl_pct_chg ~ year_quarter_cont + state, data = p1_education)
+summary(model_education)
+```
+
+### Machine Learning Model Training
+
+```{r}
+#Split the data into training and test sets
+# Set seed for reproducibility
+set.seed(12072024)
+
+
+# Split the data
+# Create the index for 80% training and 20% testing
+train_index <- createDataPartition(p1_education$oty_month3_emplvl_pct_chg, p = 0.8, list = FALSE)
+train_education_data <- p1_education[train_index, ]
+test_education_data <- p1_education[-train_index, ]
+
+#Machine learning model: Linear regression model to predict a country's GINI inedex 
+# Define the training control (10-fold cross-validation)
+train_education_control <- trainControl(method = "cv", number = 10)
+#Train the model using caret or tiny models
+lm_model_education <- train(oty_month3_emplvl_pct_chg ~ year_quarter_cont + state, 
+                   data = train_education_data,
+                   method = "lm",      
+                   trControl = train_education_control)
+
+# Understand model results
+summary(lm_model_education)
+
+# Assess the model performance both the training and test dataset using Root mean squared error (RMSE)
+
+## Make predictions on the test set
+predictions_education <- predict(lm_model_education, newdata = test_education_data)
+
+## Combine actual vs predicted values
+results_education <- data.frame(Actual = test_education_data$oty_month3_emplvl_pct_chg, Predicted = predictions_education)
+
+## View the results
+head(results_education)
+
+## Calculate RMSE, R-squared, and MAE
+model_eval_education <- postResample(predictions_education, test_education_data$oty_month3_emplvl_pct_chg)
+
+## View performance metrics
+summary(p1_education$oty_month3_emplvl_pct_chg)
+
+print(model_eval_education)
+```
+
+## Predict Outcome
+
+```{r}
+# Define the time period
+years <- 2024:2025
+quarters <- paste0("Q_", 1:4)
+year_quarters <- as.vector(outer(years, quarters, paste, sep = "_"))
+year_quarter_cont <- 40:144
+# Define the states and territories
+locations <- c(
+  "Delaware", "Florida", "Georgia", "Hawaii", "Idaho", "Illinois", "Indiana", "Iowa",
+  "Kansas", "Kentucky", "Louisiana", "Maine", "Maryland", "Massachusetts", "Michigan",
+  "Minnesota", "Mississippi", "Missouri", "Montana", "Nebraska", "Nevada", 
+  "New Hampshire", "New Jersey", "New Mexico", "New York", "North Carolina", 
+  "North Dakota", "Ohio", "Oklahoma", "Oregon", "Pennsylvania", "Rhode Island", 
+  "South Carolina", "South Dakota", "Tennessee", "Texas", "Utah", "Vermont", 
+  "Virginia", "Washington", "West Virginia", "Wisconsin", "Wyoming", "Puerto Rico", 
+  "Virgin Islands"
+)
+
+# Create the data frame
+future_data_part2_education <- expand.grid(year_quarter_cont = year_quarter_cont , state = locations)
+
+```
+
+Predict outcome up to 2050
+
+```{r}
+# Predict outcomes for future_data
+future_data_part2_education$predicted_value <- predict(lm_model_education, newdata = future_data_part2_education)
+
+# Convert year_quarter_cont to readable year/quarter
+# Example numeric vector
+values <- 40:144
+
+# Define the starting year and quarter
+start_year <- 2024
+start_quarter <- 1
+
+# Create the year_quarter values
+convert_to_year_quarter <- function(x, start_year, start_quarter) {
+  # Calculate the year and quarter
+  year <- start_year + (x - 40) %/% 4  # Start year incremented by full 4 quarters
+  quarter <- start_quarter + (x - 40) %% 4
+  
+  # Handle overflow in quarters
+  if (quarter > 4) {
+    year <- year + 1
+    quarter <- quarter %% 4
+  }
+  
+  # Create the year_quarter label
+  paste0(year, "_Q", quarter)
+}
+
+# Apply the function to the values
+year_quarter <- sapply(values, convert_to_year_quarter, start_year = 2024, start_quarter = 1)
+
+# Output
+year_quarter
+
+# Example data frame
+df <- data.frame(value = values)
+
+# Add year_quarter as a factor
+future_data_part2_education$year_quarter <- factor(
+  sapply(df$value, convert_to_year_quarter, start_year = 2024, start_quarter = 1),
+  ordered = TRUE
+)
+
+
+
+
+```
+
+# Part 2: General model/function
+
+```{r}
+
+
+# Generalized function for processing and modeling
+process_and_model <- function(dataset_path, sheet_name, target_variable, predictors, start_year = 2024, start_quarter = 1, end_year = 2050, end_quarter = 4, seed = 12072024) {
+  
+  # Load the dataset
+  data <- readxl::read_excel(dataset_path, sheet = sheet_name)
+  
+  # Separate year and quarter
+  data <- data %>%
+    separate(year_quarter, into = c("year", "quarter"), sep = "_Q_")
+  
+  # Create ordered factor for year_quarter
+  data <- data %>%
+    mutate(
+      year_quarter_factor = factor(
+        paste(year, quarter, sep = "_Q_"),
+        levels = unique(paste(year, quarter, sep = "_Q_")),
+        ordered = TRUE
+      ),
+      year_quarter_cont = as.numeric(year_quarter_factor)  # Convert factor to numeric
+    )
+  
+  # Split the data into training and test sets
+  set.seed(seed)
+  train_index <- createDataPartition(data[[target_variable]], p = 0.8, list = FALSE)
+  train_data <- data[train_index, ]
+  test_data <- data[-train_index, ]
+  
+  # Define the training control
+  train_control <- trainControl(method = "cv", number = 10)
+  
+  # Train the linear regression model
+  formula <- as.formula(paste(target_variable, "~", paste(predictors, collapse = " + ")))
+  lm_model <- train(
+    formula,
+    data = train_data,
+    method = "lm",
+    trControl = train_control
+  )
+  
+  # Model summary
+  print(summary(lm_model))
+  
+  # Make predictions on the test set
+  predictions <- predict(lm_model, newdata = test_data)
+  
+  # Combine actual vs predicted values
+  results <- data.frame(Actual = test_data[[target_variable]], Predicted = predictions)
+  print(head(results))
+  
+  # Evaluate model performance
+  model_eval <- postResample(predictions, test_data[[target_variable]])
+  print(model_eval)
+  
+  # Prepare future data for prediction
+  unique_states <- unique(data$state)  # Assuming 'state' column exists in all datasets
+  
+  # Generate all the possible year_quarter_cont values from start to end
+  future_year_quarters <- seq(min(data$year_quarter_cont), 
+                              (end_year - start_year) * 4 + end_quarter - start_quarter + 1, by = 1)
+  
+  # Create the future data
+  future_data <- expand.grid(
+    year_quarter_cont = future_year_quarters,
+    state = unique_states
+  )
+  
+  # Predict outcomes for future data
+  future_data$predicted_value <- predict(lm_model, newdata = future_data)
+  
+  # Add year_quarter as a factor
+  convert_to_year_quarter <- function(x, start_year, start_quarter) {
+    # Calculate year and quarter from continuous variable
+    year <- start_year + (x - 1) %/% 4  # Determine the year
+    quarter <- start_quarter + (x - 1) %% 4  # Determine the quarter
+    if (quarter > 4) {
+      year <- year + 1
+      quarter <- quarter %% 4
+    }
+    paste0(year, "_Q", quarter)  # Return the formatted year_quarter
+  }
+  
+  # Apply the function to convert continuous to year_quarter
+  future_data$year_quarter <- factor(
+    sapply(future_data$year_quarter_cont, convert_to_year_quarter, start_year = start_year, start_quarter = start_quarter),
+    ordered = TRUE
+  )
+  
+  # Return results
+  list(
+    model = lm_model,
+    test_results = results,
+    model_eval = model_eval,
+    future_data = future_data
+  )
+}
+
+
+```
+
+# Part 2: Finance Industry
+
+```{r}
+
+finance_results <- process_and_model(
+  dataset_path = "finance.xlsx",
+  sheet_name = NULL,  # Specify sheet name if applicable
+  target_variable = "oty_month3_emplvl_pct_chg",
+  predictors = c("year_quarter_cont", "state")
+)
+
+future_data_finance <- finance_results$future_data
+# Remove rows where all values are identical
+future_data_finance <- future_data_finance %>%
+  distinct()
+```
+
+Part 2: Information Industry
+
+```{r}
+# 
+information_results <- process_and_model(
+  dataset_path = "information.xlsx",
+  sheet_name = NULL,  # Specify sheet name if applicable
+  target_variable = "oty_month3_emplvl_pct_chg",
+  predictors = c("year_quarter_cont", "state")
+)
+
+future_data_information <- information_results$future_data
+# Remove rows where all values are identical
+future_data_information <- future_data_information %>%
+  distinct()
+```
+
+# Part 2: Leisure Industry
+
+```{r}
+# 
+leisure_results <- process_and_model(
+  dataset_path = "leisure.xlsx",
+  sheet_name = NULL,  # Specify sheet name if applicable
+  target_variable = "oty_month3_emplvl_pct_chg",
+  predictors = c("year_quarter_cont", "state")
+)
+
+future_data_leisure <- leisure_results$future_data
+# Remove rows where all values are identical
+future_data_leisure <- future_data_leisure %>%
+  distinct()
+
+```
+
+# Part 2: Professional Industry
+
+```{r}
+professional_results <- process_and_model(
+  dataset_path = "professional.xlsx",
+  sheet_name = NULL,  # Specify sheet name if applicable
+  target_variable = "oty_month3_emplvl_pct_chg",
+  predictors = c("year_quarter_cont", "state")
+)
+
+future_data_professional <- professional_results$future_data
+# Remove rows where all values are identical
+future_data_professional <- future_data_professional %>%
+  distinct()
+
+```
+
+```{r}
+# combine future data for all industries for creating an interactive map in the dashboard
+# Add a new column named 'industry' with the value 'finance' for all rows
+future_data_finance$industry <- "finance"
+# Add an industry column with "information" for future_data_information
+future_data_information$industry <- "information"
+
+# Add an industry column with "leisure" for future_data_leisure
+future_data_leisure$industry <- "leisure"
+
+# Add an industry column with "education" for future_data_education
+future_data_part2_education$industry <- "education"
+
+# Add an industry column with "professional" for future_data_professional
+future_data_professional$industry <- "professional"
+
+# Combine all data frames into one
+future_data_combined <- rbind(
+  future_data_finance,
+  future_data_information,
+  future_data_leisure,
+  future_data_part2_education,
+  future_data_professional
+)
+# Save the combined data frame as an .RData file
+# save(future_data_combined, file = "future_data_combined.RData")
+```
+```{r}
+# Function to analyze and visualize the distribution of predicted_value (predicted % change in employment) to determine width of bins 
+analyze_distribution <- function(data, column_name = "predicted_value") {
+  library(ggplot2)
+  
+  # Check if the column exists
+  if (!column_name %in% colnames(data)) {
+    stop(paste("Column", column_name, "does not exist in the dataframe."))
+  }
+  
+  # Extract the column
+  values <- data[[column_name]]
+  
+  # Calculate summary statistics
+  summary_stats <- summary(values)
+  print("Summary Statistics:")
+  print(summary_stats)
+  
+  # Plot the distribution
+  ggplot(data, aes_string(x = column_name)) +
+    geom_histogram(binwidth = 1, fill = "blue", color = "white", alpha = 0.7) +
+    theme_minimal() +
+    labs(
+      title = "Distribution of Predicted Values",
+      x = "Predicted Value",
+      y = "Frequency"
+    )
+  
+  # Suggest potential bins based on quantiles
+  quantiles <- quantile(values, probs = seq(0, 1, 0.1))  # Deciles
+  print("Quantiles (Deciles):")
+  print(quantiles)
+  
+  return(list(summary_stats = summary_stats, quantiles = quantiles))
+}
+
+# Use the function on future_data_combined
+distribution_info <- analyze_distribution(future_data_combined, "predicted_value")
+```

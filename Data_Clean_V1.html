@@ -1,0 +1,1371 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.6.32">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>BLS Data Cleaning</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="Data_Clean_V1_files/libs/clipboard/clipboard.min.js"></script>
+<script src="Data_Clean_V1_files/libs/quarto-html/quarto.js"></script>
+<script src="Data_Clean_V1_files/libs/quarto-html/popper.min.js"></script>
+<script src="Data_Clean_V1_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="Data_Clean_V1_files/libs/quarto-html/anchor.min.js"></script>
+<link href="Data_Clean_V1_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="Data_Clean_V1_files/libs/quarto-html/quarto-syntax-highlighting-2486e1f0a3ee9ee1fc393803a1361cdb.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="Data_Clean_V1_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="Data_Clean_V1_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="Data_Clean_V1_files/libs/bootstrap/bootstrap-677b520d69fcc55ab41b4b425631e74d.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+
+
+</head>
+
+<body class="fullcontent">
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">BLS Data Cleaning</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<section id="set-up" class="level2">
+<h2 class="anchored" data-anchor-id="set-up">Set Up</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Load packages</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">suppressPackageStartupMessages</span>(<span class="fu">library</span>(blsAPI))</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">suppressPackageStartupMessages</span>(<span class="fu">library</span>(blscrapeR))</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="fu">suppressPackageStartupMessages</span>(<span class="fu">library</span>(devtools))</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="fu">suppressPackageStartupMessages</span>(<span class="fu">library</span>(dplyr))</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="fu">suppressPackageStartupMessages</span>(<span class="fu">library</span>(tidyr))</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="fu">install_github</span>(<span class="st">"mikeasilva/blsAPI"</span>, <span class="at">force =</span> <span class="cn">TRUE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Using GitHub PAT from the git credential store.</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Downloading GitHub repo mikeasilva/blsAPI@HEAD</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+── R CMD build ─────────────────────────────────────────────────────────────────
+
+   File /var/folders/0s/q502y8_132533khqgxhhqnbw0000gn/T//Rtmp3yHmpq/callr-uev-8ee93a4c2947 contains invalid line(s)
+      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
+   They were ignored
+
+* checking for file ‘/private/var/folders/0s/q502y8_132533khqgxhhqnbw0000gn/T/Rtmp3yHmpq/remotes8ee93a118ed8/mikeasilva-blsAPI-a125b3a/DESCRIPTION’ ... OK
+* preparing ‘blsAPI’:
+* checking DESCRIPTION meta-information ... OK
+* checking for LF line-endings in source and make files and shell scripts
+* checking for empty or unneeded directories
+  NB: this package now depends on R (&gt;= 3.5.0)
+  WARNING: Added dependency on R &gt;= 3.5.0 because serialized objects in
+  serialize/load version 3 cannot be read in older versions of R.
+  File(s) containing such objects:
+    ‘blsAPI/data/LAUS_AreaCodes.RData’
+* building ‘blsAPI_0.2.2.tar.gz’</code></pre>
+</div>
+</div>
+</section>
+<section id="part-1" class="level2">
+<h2 class="anchored" data-anchor-id="part-1">Part 1</h2>
+<p>1.1 Retrieve median weekly earnings by gender</p>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Note
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>The data has been split into 3 separate data sets (initially) due to the limitation on the BLS website to pull 10 years of data at a time. The 3 data sets have been recombined at the end.</p>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 2000-2009 Median weekly earning by sex </span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>service_occupation_1 <span class="ot">&lt;-</span> <span class="fu">c</span>(</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>  <span class="st">"LEU0254650200"</span>,  <span class="co"># Median weekly earning (Men)</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>  <span class="st">"LEU0254757000"</span>  <span class="co"># Median weekly earning (Women)</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>start_year <span class="ot">&lt;-</span> <span class="dv">2000</span></span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>end_year <span class="ot">&lt;-</span> <span class="dv">2009</span></span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>service_occupation_1 <span class="ot">&lt;-</span> <span class="fu">bls_api</span>(service_occupation_1, <span class="at">startyear =</span> start_year, <span class="at">endyear =</span> end_year)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>REQUEST_SUCCEEDED</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 2010-2019 Median weekly earning by sex</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>service_occupation_2 <span class="ot">&lt;-</span> <span class="fu">c</span>(</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>  <span class="st">"LEU0254650200"</span>,  <span class="co"># Median weekly earning (Men)</span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>  <span class="st">"LEU0254757000"</span>  <span class="co"># Median weekly earning (Women)</span></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>start_year <span class="ot">&lt;-</span> <span class="dv">2010</span></span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>end_year <span class="ot">&lt;-</span> <span class="dv">2019</span></span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>service_occupation_2 <span class="ot">&lt;-</span> <span class="fu">bls_api</span>(service_occupation_2, <span class="at">startyear =</span> start_year, <span class="at">endyear =</span> end_year)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>REQUEST_SUCCEEDED</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 2020-2023 Median weekly earning by sex</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>service_occupation_3 <span class="ot">&lt;-</span> <span class="fu">c</span>(</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>  <span class="st">"LEU0254650200"</span>,  <span class="co"># Median weekly earning (Men)</span></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>  <span class="st">"LEU0254757000"</span>  <span class="co"># Median weekly earning (Women)</span></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>start_year <span class="ot">&lt;-</span> <span class="dv">2020</span></span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>end_year <span class="ot">&lt;-</span> <span class="dv">2023</span></span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>service_occupation_3 <span class="ot">&lt;-</span> <span class="fu">bls_api</span>(service_occupation_3, <span class="at">startyear =</span> start_year, <span class="at">endyear =</span> end_year)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>REQUEST_SUCCEEDED</code></pre>
+</div>
+</div>
+<p>1.2 Convert data to wide format</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>service_occupation_1 <span class="ot">&lt;-</span> service_occupation_1 <span class="sc">%&gt;%</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(year, period, seriesID, value) <span class="sc">%&gt;%</span>  </span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pivot_wider</span>(<span class="at">names_from =</span> seriesID, <span class="at">values_from =</span> value) <span class="sc">%&gt;%</span>  </span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(year, period) </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>service_occupation_2 <span class="ot">&lt;-</span> service_occupation_2 <span class="sc">%&gt;%</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(year, period, seriesID, value) <span class="sc">%&gt;%</span>  </span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pivot_wider</span>(<span class="at">names_from =</span> seriesID, <span class="at">values_from =</span> value) <span class="sc">%&gt;%</span>  </span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(year, period) </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>service_occupation_3 <span class="ot">&lt;-</span> service_occupation_3 <span class="sc">%&gt;%</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(year, period, seriesID, value) <span class="sc">%&gt;%</span>  </span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pivot_wider</span>(<span class="at">names_from =</span> seriesID, <span class="at">values_from =</span> value) <span class="sc">%&gt;%</span>  </span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(year, period) </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>1.3 Rename variables for readability</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>service_occupation_1 <span class="ot">&lt;-</span> service_occupation_1 <span class="sc">%&gt;%</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rename</span>(</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">men =</span> LEU0254650200,</span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">women =</span> LEU0254757000</span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>  )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>service_occupation_2 <span class="ot">&lt;-</span> service_occupation_2 <span class="sc">%&gt;%</span></span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rename</span>(</span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">men =</span> LEU0254650200,</span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">women =</span> LEU0254757000</span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>  )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>service_occupation_3 <span class="ot">&lt;-</span> service_occupation_3 <span class="sc">%&gt;%</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rename</span>(</span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">men =</span> LEU0254650200,</span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">women =</span> LEU0254757000</span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>  )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>1.5 Combine the three data sets</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>service_occupation <span class="ot">&lt;-</span> <span class="fu">bind_rows</span>(service_occupation_1, </span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>                                service_occupation_2,</span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>                                service_occupation_3)</span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a><span class="fu">View</span>(service_occupation)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>1.6 Aggregate quarterly data to annual</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>service_occupation_a1 <span class="ot">&lt;-</span> service_occupation_1 <span class="sc">%&gt;%</span></span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(year) <span class="sc">%&gt;%</span></span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(</span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">a_men =</span> <span class="fu">sum</span>(men, <span class="at">na.rm =</span> <span class="cn">TRUE</span>) <span class="sc">/</span> <span class="dv">4</span>,</span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">a_women =</span> <span class="fu">sum</span>(women, <span class="at">na.rm =</span> <span class="cn">TRUE</span>) <span class="sc">/</span> <span class="dv">4</span></span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span></span>
+<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ungroup</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>service_occupation_a2 <span class="ot">&lt;-</span> service_occupation_2 <span class="sc">%&gt;%</span></span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(year) <span class="sc">%&gt;%</span></span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(</span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">a_men =</span> <span class="fu">sum</span>(men, <span class="at">na.rm =</span> <span class="cn">TRUE</span>) <span class="sc">/</span> <span class="dv">4</span>,</span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">a_women =</span> <span class="fu">sum</span>(women, <span class="at">na.rm =</span> <span class="cn">TRUE</span>) <span class="sc">/</span> <span class="dv">4</span></span>
+<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span></span>
+<span id="cb19-7"><a href="#cb19-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ungroup</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>service_occupation_a3 <span class="ot">&lt;-</span> service_occupation_3 <span class="sc">%&gt;%</span></span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(year) <span class="sc">%&gt;%</span></span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(</span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">a_men =</span> <span class="fu">sum</span>(men, <span class="at">na.rm =</span> <span class="cn">TRUE</span>) <span class="sc">/</span> <span class="dv">4</span>,</span>
+<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">a_women =</span> <span class="fu">sum</span>(women, <span class="at">na.rm =</span> <span class="cn">TRUE</span>) <span class="sc">/</span> <span class="dv">4</span></span>
+<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span></span>
+<span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ungroup</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>service_occupation_a <span class="ot">&lt;-</span> <span class="fu">bind_rows</span>(service_occupation_a1, </span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>                                service_occupation_a2,</span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>                                service_occupation_a3)</span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a><span class="fu">View</span>(service_occupation_a)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>1.7 Adding Race Variable</p>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Note
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>The data has been split into 2 separate data sets (initially) due to the limitation on the BLS website to pull 10 years of data at a time. The 3 data sets have been recombined at the end.</p>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>service_occupation_1r <span class="ot">&lt;-</span> <span class="fu">c</span>(</span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>  <span class="st">"LEU0259199200"</span>,  <span class="co"># Median weekly earning (Asian Men)</span></span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>  <span class="st">"LEU0259210800"</span>,  <span class="co"># Median weekly earning (Asian Women)</span></span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a>  <span class="st">"LEU0259193400"</span>,  <span class="co"># Median weekly earning (White Men)</span></span>
+<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a>  <span class="st">"LEU0259205000"</span>,  <span class="co"># Median weekly earning (White Women)</span></span>
+<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a>  <span class="st">"LEU0259196300"</span>,  <span class="co"># Median weekly earning (Black Men)</span></span>
+<span id="cb22-7"><a href="#cb22-7" aria-hidden="true" tabindex="-1"></a>  <span class="st">"LEU0259207900"</span>   <span class="co"># Median weekly earning (Black Women)</span></span>
+<span id="cb22-8"><a href="#cb22-8" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb22-9"><a href="#cb22-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-10"><a href="#cb22-10" aria-hidden="true" tabindex="-1"></a>start_year <span class="ot">&lt;-</span> <span class="dv">2010</span></span>
+<span id="cb22-11"><a href="#cb22-11" aria-hidden="true" tabindex="-1"></a>end_year <span class="ot">&lt;-</span> <span class="dv">2019</span></span>
+<span id="cb22-12"><a href="#cb22-12" aria-hidden="true" tabindex="-1"></a>service_occupation_1r <span class="ot">&lt;-</span> <span class="fu">bls_api</span>(service_occupation_1r, <span class="at">startyear =</span> start_year, <span class="at">endyear =</span> end_year)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>REQUEST_SUCCEEDED</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>service_occupation_2r <span class="ot">&lt;-</span> <span class="fu">c</span>(</span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>  <span class="st">"LEU0259199200"</span>,  <span class="co"># Median weekly earning (Asian Men)</span></span>
+<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a>  <span class="st">"LEU0259210800"</span>,  <span class="co"># Median weekly earning (Asian Women)</span></span>
+<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a>  <span class="st">"LEU0259193400"</span>,  <span class="co"># Median weekly earning (White Men)</span></span>
+<span id="cb24-5"><a href="#cb24-5" aria-hidden="true" tabindex="-1"></a>  <span class="st">"LEU0259205000"</span>,  <span class="co"># Median weekly earning (White Women)</span></span>
+<span id="cb24-6"><a href="#cb24-6" aria-hidden="true" tabindex="-1"></a>  <span class="st">"LEU0259196300"</span>,  <span class="co"># Median weekly earning (Black Men)</span></span>
+<span id="cb24-7"><a href="#cb24-7" aria-hidden="true" tabindex="-1"></a>  <span class="st">"LEU0259207900"</span>   <span class="co"># Median weekly earning (Black Women)</span></span>
+<span id="cb24-8"><a href="#cb24-8" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb24-9"><a href="#cb24-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-10"><a href="#cb24-10" aria-hidden="true" tabindex="-1"></a>start_year <span class="ot">&lt;-</span> <span class="dv">2020</span></span>
+<span id="cb24-11"><a href="#cb24-11" aria-hidden="true" tabindex="-1"></a>end_year <span class="ot">&lt;-</span> <span class="dv">2023</span></span>
+<span id="cb24-12"><a href="#cb24-12" aria-hidden="true" tabindex="-1"></a>service_occupation_2r <span class="ot">&lt;-</span> <span class="fu">bls_api</span>(service_occupation_2r, <span class="at">startyear =</span> start_year, <span class="at">endyear =</span> end_year)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>REQUEST_SUCCEEDED</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb26"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>service_occupation_1r <span class="ot">&lt;-</span> service_occupation_1r <span class="sc">%&gt;%</span></span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(year, period, seriesID, value) <span class="sc">%&gt;%</span>  </span>
+<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pivot_wider</span>(<span class="at">names_from =</span> seriesID, <span class="at">values_from =</span> value) <span class="sc">%&gt;%</span>  </span>
+<span id="cb26-4"><a href="#cb26-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(year, period) </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb27"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a>service_occupation_2r <span class="ot">&lt;-</span> service_occupation_2r <span class="sc">%&gt;%</span></span>
+<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(year, period, seriesID, value) <span class="sc">%&gt;%</span>  </span>
+<span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pivot_wider</span>(<span class="at">names_from =</span> seriesID, <span class="at">values_from =</span> value) <span class="sc">%&gt;%</span>  </span>
+<span id="cb27-4"><a href="#cb27-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(year, period) </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb28"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a>service_occupation_1r <span class="ot">&lt;-</span> service_occupation_1r <span class="sc">%&gt;%</span></span>
+<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rename</span>(</span>
+<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">asian_men =</span> LEU0259199200,</span>
+<span id="cb28-4"><a href="#cb28-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">asian_women =</span> LEU0259210800,</span>
+<span id="cb28-5"><a href="#cb28-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">white_men =</span> LEU0259193400,</span>
+<span id="cb28-6"><a href="#cb28-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">white_women =</span> LEU0259205000,</span>
+<span id="cb28-7"><a href="#cb28-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">black_men =</span> LEU0259196300,</span>
+<span id="cb28-8"><a href="#cb28-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">black_women =</span> LEU0259207900</span>
+<span id="cb28-9"><a href="#cb28-9" aria-hidden="true" tabindex="-1"></a>  )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb29"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a>service_occupation_2r <span class="ot">&lt;-</span> service_occupation_2r <span class="sc">%&gt;%</span></span>
+<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rename</span>(</span>
+<span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">asian_men =</span> LEU0259199200,</span>
+<span id="cb29-4"><a href="#cb29-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">asian_women =</span> LEU0259210800,</span>
+<span id="cb29-5"><a href="#cb29-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">white_men =</span> LEU0259193400,</span>
+<span id="cb29-6"><a href="#cb29-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">white_women =</span> LEU0259205000,</span>
+<span id="cb29-7"><a href="#cb29-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">black_men =</span> LEU0259196300,</span>
+<span id="cb29-8"><a href="#cb29-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">black_women =</span> LEU0259207900</span>
+<span id="cb29-9"><a href="#cb29-9" aria-hidden="true" tabindex="-1"></a>  )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb30"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a>service_occupation_r <span class="ot">&lt;-</span> <span class="fu">bind_rows</span>(service_occupation_1r, </span>
+<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a>                                service_occupation_2r)</span>
+<span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb30-4"><a href="#cb30-4" aria-hidden="true" tabindex="-1"></a><span class="fu">View</span>(service_occupation_r)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="part-2" class="level2">
+<h2 class="anchored" data-anchor-id="part-2">Part 2</h2>
+<p>2.1 Create function to call in data</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb31"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a>qcewGetIndustryData <span class="ot">&lt;-</span> <span class="cf">function</span> (year, qtr, industry) {</span>
+<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a>    url <span class="ot">&lt;-</span> <span class="st">"http://data.bls.gov/cew/data/api/YEAR/QTR/industry/INDUSTRY.csv"</span></span>
+<span id="cb31-3"><a href="#cb31-3" aria-hidden="true" tabindex="-1"></a>    url <span class="ot">&lt;-</span> <span class="fu">sub</span>(<span class="st">"YEAR"</span>, year, url, <span class="at">ignore.case=</span><span class="cn">FALSE</span>)</span>
+<span id="cb31-4"><a href="#cb31-4" aria-hidden="true" tabindex="-1"></a>    url <span class="ot">&lt;-</span> <span class="fu">sub</span>(<span class="st">"QTR"</span>, <span class="fu">tolower</span>(qtr), url, <span class="at">ignore.case=</span><span class="cn">FALSE</span>)</span>
+<span id="cb31-5"><a href="#cb31-5" aria-hidden="true" tabindex="-1"></a>    url <span class="ot">&lt;-</span> <span class="fu">sub</span>(<span class="st">"INDUSTRY"</span>, industry, url, <span class="at">ignore.case=</span><span class="cn">FALSE</span>)</span>
+<span id="cb31-6"><a href="#cb31-6" aria-hidden="true" tabindex="-1"></a>    <span class="fu">read.csv</span>(url, <span class="at">header =</span> <span class="cn">TRUE</span>, <span class="at">sep =</span> <span class="st">","</span>, <span class="at">quote=</span><span class="st">"</span><span class="sc">\"</span><span class="st">"</span>, <span class="at">dec=</span><span class="st">"."</span>, <span class="at">na.strings=</span><span class="st">" "</span>, <span class="at">skip=</span><span class="dv">0</span>)</span>
+<span id="cb31-7"><a href="#cb31-7" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>2.2 Call in industry: information</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb32"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a>information <span class="ot">&lt;-</span> <span class="fu">list</span>()</span>
+<span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-3"><a href="#cb32-3" aria-hidden="true" tabindex="-1"></a>years <span class="ot">&lt;-</span> <span class="dv">2014</span><span class="sc">:</span><span class="dv">2023</span></span>
+<span id="cb32-4"><a href="#cb32-4" aria-hidden="true" tabindex="-1"></a>quarters <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"1"</span>, <span class="st">"2"</span>, <span class="st">"3"</span>, <span class="st">"4"</span>)</span>
+<span id="cb32-5"><a href="#cb32-5" aria-hidden="true" tabindex="-1"></a>industry <span class="ot">&lt;-</span> <span class="st">"1022"</span>  </span>
+<span id="cb32-6"><a href="#cb32-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-7"><a href="#cb32-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Loop through years and quarters</span></span>
+<span id="cb32-8"><a href="#cb32-8" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (year <span class="cf">in</span> years) {</span>
+<span id="cb32-9"><a href="#cb32-9" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> (qtr <span class="cf">in</span> quarters) {</span>
+<span id="cb32-10"><a href="#cb32-10" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Fetch data for the given year and quarter</span></span>
+<span id="cb32-11"><a href="#cb32-11" aria-hidden="true" tabindex="-1"></a>    data <span class="ot">&lt;-</span> <span class="fu">qcewGetIndustryData</span>(year, qtr, industry)</span>
+<span id="cb32-12"><a href="#cb32-12" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb32-13"><a href="#cb32-13" aria-hidden="true" tabindex="-1"></a>   <span class="co"># Add the year_quarter column</span></span>
+<span id="cb32-14"><a href="#cb32-14" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (<span class="sc">!</span><span class="fu">is.null</span>(data)) {</span>
+<span id="cb32-15"><a href="#cb32-15" aria-hidden="true" tabindex="-1"></a>      year_quarter <span class="ot">&lt;-</span> <span class="fu">paste</span>(year, <span class="st">"Q"</span>, qtr, <span class="at">sep =</span> <span class="st">"_"</span>)  <span class="co"># e.g., "2000_Q1"</span></span>
+<span id="cb32-16"><a href="#cb32-16" aria-hidden="true" tabindex="-1"></a>      data<span class="sc">$</span>year_quarter <span class="ot">&lt;-</span> year_quarter  <span class="co"># Add as a new column</span></span>
+<span id="cb32-17"><a href="#cb32-17" aria-hidden="true" tabindex="-1"></a>      information[[year_quarter]] <span class="ot">&lt;-</span> data  <span class="co"># Store in the list</span></span>
+<span id="cb32-18"><a href="#cb32-18" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb32-19"><a href="#cb32-19" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb32-20"><a href="#cb32-20" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb32-21"><a href="#cb32-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-22"><a href="#cb32-22" aria-hidden="true" tabindex="-1"></a>information <span class="ot">&lt;-</span> <span class="fu">do.call</span>(rbind, information)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb33"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a>information <span class="ot">&lt;-</span> information <span class="sc">%&gt;%</span></span>
+<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(area_fips, own_code, oty_month3_emplvl_pct_chg, year_quarter)</span>
+<span id="cb33-3"><a href="#cb33-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-4"><a href="#cb33-4" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(information)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>           area_fips own_code oty_month3_emplvl_pct_chg year_quarter
+2014_Q_1.1     01000        1                       8.3     2014_Q_1
+2014_Q_1.2     01000        2                      -6.8     2014_Q_1
+2014_Q_1.3     01000        3                       5.9     2014_Q_1
+2014_Q_1.4     01000        5                      -0.8     2014_Q_1
+2014_Q_1.5     01001        3                       0.0     2014_Q_1
+2014_Q_1.6     01001        5                       0.0     2014_Q_1</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb35"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a>area_fips_values <span class="ot">&lt;-</span> <span class="fu">c</span>(</span>
+<span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a>  <span class="dv">01000</span>, <span class="dv">02000</span>, <span class="dv">04000</span>, <span class="dv">05000</span>, <span class="dv">06000</span>, <span class="dv">08000</span>, <span class="dv">09000</span>, <span class="dv">10000</span>, <span class="dv">12000</span>, <span class="dv">13000</span>, </span>
+<span id="cb35-3"><a href="#cb35-3" aria-hidden="true" tabindex="-1"></a>  <span class="dv">15000</span>, <span class="dv">16000</span>, <span class="dv">17000</span>, <span class="dv">18000</span>, <span class="dv">19000</span>, <span class="dv">20000</span>, <span class="dv">21000</span>, <span class="dv">22000</span>, <span class="dv">23000</span>, <span class="dv">24000</span>, </span>
+<span id="cb35-4"><a href="#cb35-4" aria-hidden="true" tabindex="-1"></a>  <span class="dv">25000</span>, <span class="dv">26000</span>, <span class="dv">27000</span>, <span class="dv">28000</span>, <span class="dv">29000</span>, <span class="dv">30000</span>, <span class="dv">31000</span>, <span class="dv">32000</span>, <span class="dv">33000</span>, <span class="dv">34000</span>, </span>
+<span id="cb35-5"><a href="#cb35-5" aria-hidden="true" tabindex="-1"></a>  <span class="dv">35000</span>, <span class="dv">36000</span>, <span class="dv">37000</span>, <span class="dv">38000</span>, <span class="dv">39000</span>, <span class="dv">40000</span>, <span class="dv">41000</span>, <span class="dv">42000</span>, <span class="dv">44000</span>, <span class="dv">45000</span>, </span>
+<span id="cb35-6"><a href="#cb35-6" aria-hidden="true" tabindex="-1"></a>  <span class="dv">46000</span>, <span class="dv">47000</span>, <span class="dv">48000</span>, <span class="dv">49000</span>, <span class="dv">50000</span>, <span class="dv">51000</span>, <span class="dv">53000</span>, <span class="dv">54000</span>, <span class="dv">55000</span>, <span class="dv">56000</span>, </span>
+<span id="cb35-7"><a href="#cb35-7" aria-hidden="true" tabindex="-1"></a>  <span class="dv">72000</span>, <span class="dv">78000</span></span>
+<span id="cb35-8"><a href="#cb35-8" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb35-9"><a href="#cb35-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb35-10"><a href="#cb35-10" aria-hidden="true" tabindex="-1"></a>information <span class="ot">&lt;-</span> information <span class="sc">%&gt;%</span></span>
+<span id="cb35-11"><a href="#cb35-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(area_fips <span class="sc">%in%</span> area_fips_values, own_code <span class="sc">==</span> <span class="dv">5</span>)</span>
+<span id="cb35-12"><a href="#cb35-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb35-13"><a href="#cb35-13" aria-hidden="true" tabindex="-1"></a><span class="fu">View</span>(information)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb36"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a>information <span class="ot">&lt;-</span> information <span class="sc">%&gt;%</span></span>
+<span id="cb36-2"><a href="#cb36-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(area_fips <span class="sc">%in%</span> <span class="fu">c</span>(</span>
+<span id="cb36-3"><a href="#cb36-3" aria-hidden="true" tabindex="-1"></a>    <span class="dv">01000</span>, <span class="dv">02000</span>, <span class="dv">04000</span>, <span class="dv">05000</span>, <span class="dv">06000</span>, <span class="dv">08000</span>, <span class="dv">09000</span>, <span class="dv">10000</span>, <span class="dv">12000</span>, <span class="dv">13000</span>, </span>
+<span id="cb36-4"><a href="#cb36-4" aria-hidden="true" tabindex="-1"></a>    <span class="dv">15000</span>, <span class="dv">16000</span>, <span class="dv">17000</span>, <span class="dv">18000</span>, <span class="dv">19000</span>, <span class="dv">20000</span>, <span class="dv">21000</span>, <span class="dv">22000</span>, <span class="dv">23000</span>, <span class="dv">24000</span>, </span>
+<span id="cb36-5"><a href="#cb36-5" aria-hidden="true" tabindex="-1"></a>    <span class="dv">25000</span>, <span class="dv">26000</span>, <span class="dv">27000</span>, <span class="dv">28000</span>, <span class="dv">29000</span>, <span class="dv">30000</span>, <span class="dv">31000</span>, <span class="dv">32000</span>, <span class="dv">33000</span>, <span class="dv">34000</span>, </span>
+<span id="cb36-6"><a href="#cb36-6" aria-hidden="true" tabindex="-1"></a>    <span class="dv">35000</span>, <span class="dv">36000</span>, <span class="dv">37000</span>, <span class="dv">38000</span>, <span class="dv">39000</span>, <span class="dv">40000</span>, <span class="dv">41000</span>, <span class="dv">42000</span>, <span class="dv">44000</span>, <span class="dv">45000</span>, </span>
+<span id="cb36-7"><a href="#cb36-7" aria-hidden="true" tabindex="-1"></a>    <span class="dv">46000</span>, <span class="dv">47000</span>, <span class="dv">48000</span>, <span class="dv">49000</span>, <span class="dv">50000</span>, <span class="dv">51000</span>, <span class="dv">53000</span>, <span class="dv">54000</span>, <span class="dv">55000</span>, <span class="dv">56000</span>, </span>
+<span id="cb36-8"><a href="#cb36-8" aria-hidden="true" tabindex="-1"></a>    <span class="dv">72000</span>, <span class="dv">78000</span></span>
+<span id="cb36-9"><a href="#cb36-9" aria-hidden="true" tabindex="-1"></a>  )) <span class="sc">%&gt;%</span></span>
+<span id="cb36-10"><a href="#cb36-10" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb36-11"><a href="#cb36-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">state =</span> <span class="fu">case_when</span>(</span>
+<span id="cb36-12"><a href="#cb36-12" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">01000</span> <span class="sc">~</span> <span class="st">"Alabama"</span>,</span>
+<span id="cb36-13"><a href="#cb36-13" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">02000</span> <span class="sc">~</span> <span class="st">"Alaska"</span>,</span>
+<span id="cb36-14"><a href="#cb36-14" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">04000</span> <span class="sc">~</span> <span class="st">"Arizona"</span>,</span>
+<span id="cb36-15"><a href="#cb36-15" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">05000</span> <span class="sc">~</span> <span class="st">"Arkansas"</span>,</span>
+<span id="cb36-16"><a href="#cb36-16" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">06000</span> <span class="sc">~</span> <span class="st">"California"</span>,</span>
+<span id="cb36-17"><a href="#cb36-17" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">08000</span> <span class="sc">~</span> <span class="st">"Colorado"</span>,</span>
+<span id="cb36-18"><a href="#cb36-18" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">09000</span> <span class="sc">~</span> <span class="st">"Connecticut"</span>,</span>
+<span id="cb36-19"><a href="#cb36-19" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">10000</span> <span class="sc">~</span> <span class="st">"Delaware"</span>,</span>
+<span id="cb36-20"><a href="#cb36-20" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">12000</span> <span class="sc">~</span> <span class="st">"Florida"</span>,</span>
+<span id="cb36-21"><a href="#cb36-21" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">13000</span> <span class="sc">~</span> <span class="st">"Georgia"</span>,</span>
+<span id="cb36-22"><a href="#cb36-22" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">15000</span> <span class="sc">~</span> <span class="st">"Hawaii"</span>,</span>
+<span id="cb36-23"><a href="#cb36-23" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">16000</span> <span class="sc">~</span> <span class="st">"Idaho"</span>,</span>
+<span id="cb36-24"><a href="#cb36-24" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">17000</span> <span class="sc">~</span> <span class="st">"Illinois"</span>,</span>
+<span id="cb36-25"><a href="#cb36-25" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">18000</span> <span class="sc">~</span> <span class="st">"Indiana"</span>,</span>
+<span id="cb36-26"><a href="#cb36-26" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">19000</span> <span class="sc">~</span> <span class="st">"Iowa"</span>,</span>
+<span id="cb36-27"><a href="#cb36-27" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">20000</span> <span class="sc">~</span> <span class="st">"Kansas"</span>,</span>
+<span id="cb36-28"><a href="#cb36-28" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">21000</span> <span class="sc">~</span> <span class="st">"Kentucky"</span>,</span>
+<span id="cb36-29"><a href="#cb36-29" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">22000</span> <span class="sc">~</span> <span class="st">"Louisiana"</span>,</span>
+<span id="cb36-30"><a href="#cb36-30" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">23000</span> <span class="sc">~</span> <span class="st">"Maine"</span>,</span>
+<span id="cb36-31"><a href="#cb36-31" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">24000</span> <span class="sc">~</span> <span class="st">"Maryland"</span>,</span>
+<span id="cb36-32"><a href="#cb36-32" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">25000</span> <span class="sc">~</span> <span class="st">"Massachusetts"</span>,</span>
+<span id="cb36-33"><a href="#cb36-33" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">26000</span> <span class="sc">~</span> <span class="st">"Michigan"</span>,</span>
+<span id="cb36-34"><a href="#cb36-34" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">27000</span> <span class="sc">~</span> <span class="st">"Minnesota"</span>,</span>
+<span id="cb36-35"><a href="#cb36-35" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">28000</span> <span class="sc">~</span> <span class="st">"Mississippi"</span>,</span>
+<span id="cb36-36"><a href="#cb36-36" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">29000</span> <span class="sc">~</span> <span class="st">"Missouri"</span>,</span>
+<span id="cb36-37"><a href="#cb36-37" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">30000</span> <span class="sc">~</span> <span class="st">"Montana"</span>,</span>
+<span id="cb36-38"><a href="#cb36-38" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">31000</span> <span class="sc">~</span> <span class="st">"Nebraska"</span>,</span>
+<span id="cb36-39"><a href="#cb36-39" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">32000</span> <span class="sc">~</span> <span class="st">"Nevada"</span>,</span>
+<span id="cb36-40"><a href="#cb36-40" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">33000</span> <span class="sc">~</span> <span class="st">"New Hampshire"</span>,</span>
+<span id="cb36-41"><a href="#cb36-41" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">34000</span> <span class="sc">~</span> <span class="st">"New Jersey"</span>,</span>
+<span id="cb36-42"><a href="#cb36-42" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">35000</span> <span class="sc">~</span> <span class="st">"New Mexico"</span>,</span>
+<span id="cb36-43"><a href="#cb36-43" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">36000</span> <span class="sc">~</span> <span class="st">"New York"</span>,</span>
+<span id="cb36-44"><a href="#cb36-44" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">37000</span> <span class="sc">~</span> <span class="st">"North Carolina"</span>,</span>
+<span id="cb36-45"><a href="#cb36-45" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">38000</span> <span class="sc">~</span> <span class="st">"North Dakota"</span>,</span>
+<span id="cb36-46"><a href="#cb36-46" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">39000</span> <span class="sc">~</span> <span class="st">"Ohio"</span>,</span>
+<span id="cb36-47"><a href="#cb36-47" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">40000</span> <span class="sc">~</span> <span class="st">"Oklahoma"</span>,</span>
+<span id="cb36-48"><a href="#cb36-48" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">41000</span> <span class="sc">~</span> <span class="st">"Oregon"</span>,</span>
+<span id="cb36-49"><a href="#cb36-49" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">42000</span> <span class="sc">~</span> <span class="st">"Pennsylvania"</span>,</span>
+<span id="cb36-50"><a href="#cb36-50" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">44000</span> <span class="sc">~</span> <span class="st">"Rhode Island"</span>,</span>
+<span id="cb36-51"><a href="#cb36-51" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">45000</span> <span class="sc">~</span> <span class="st">"South Carolina"</span>,</span>
+<span id="cb36-52"><a href="#cb36-52" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">46000</span> <span class="sc">~</span> <span class="st">"South Dakota"</span>,</span>
+<span id="cb36-53"><a href="#cb36-53" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">47000</span> <span class="sc">~</span> <span class="st">"Tennessee"</span>,</span>
+<span id="cb36-54"><a href="#cb36-54" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">48000</span> <span class="sc">~</span> <span class="st">"Texas"</span>,</span>
+<span id="cb36-55"><a href="#cb36-55" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">49000</span> <span class="sc">~</span> <span class="st">"Utah"</span>,</span>
+<span id="cb36-56"><a href="#cb36-56" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">50000</span> <span class="sc">~</span> <span class="st">"Vermont"</span>,</span>
+<span id="cb36-57"><a href="#cb36-57" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">51000</span> <span class="sc">~</span> <span class="st">"Virginia"</span>,</span>
+<span id="cb36-58"><a href="#cb36-58" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">53000</span> <span class="sc">~</span> <span class="st">"Washington"</span>,</span>
+<span id="cb36-59"><a href="#cb36-59" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">54000</span> <span class="sc">~</span> <span class="st">"West Virginia"</span>,</span>
+<span id="cb36-60"><a href="#cb36-60" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">55000</span> <span class="sc">~</span> <span class="st">"Wisconsin"</span>,</span>
+<span id="cb36-61"><a href="#cb36-61" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">56000</span> <span class="sc">~</span> <span class="st">"Wyoming"</span>,</span>
+<span id="cb36-62"><a href="#cb36-62" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">72000</span> <span class="sc">~</span> <span class="st">"Puerto Rico"</span>,</span>
+<span id="cb36-63"><a href="#cb36-63" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">78000</span> <span class="sc">~</span> <span class="st">"Virgin Islands"</span>,</span>
+<span id="cb36-64"><a href="#cb36-64" aria-hidden="true" tabindex="-1"></a>    <span class="cn">TRUE</span> <span class="sc">~</span> <span class="cn">NA_character_</span> <span class="co"># Default for unmatched values</span></span>
+<span id="cb36-65"><a href="#cb36-65" aria-hidden="true" tabindex="-1"></a>  ))</span>
+<span id="cb36-66"><a href="#cb36-66" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-67"><a href="#cb36-67" aria-hidden="true" tabindex="-1"></a><span class="co"># View the updated dataset</span></span>
+<span id="cb36-68"><a href="#cb36-68" aria-hidden="true" tabindex="-1"></a><span class="fu">View</span>(information)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>2.3 Call in industry: financial activities</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb37"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a>finance <span class="ot">&lt;-</span> <span class="fu">list</span>()</span>
+<span id="cb37-2"><a href="#cb37-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-3"><a href="#cb37-3" aria-hidden="true" tabindex="-1"></a>years <span class="ot">&lt;-</span> <span class="dv">2014</span><span class="sc">:</span><span class="dv">2023</span></span>
+<span id="cb37-4"><a href="#cb37-4" aria-hidden="true" tabindex="-1"></a>quarters <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"1"</span>, <span class="st">"2"</span>, <span class="st">"3"</span>, <span class="st">"4"</span>)</span>
+<span id="cb37-5"><a href="#cb37-5" aria-hidden="true" tabindex="-1"></a>industry <span class="ot">&lt;-</span> <span class="st">"1023"</span>  </span>
+<span id="cb37-6"><a href="#cb37-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-7"><a href="#cb37-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Loop through years and quarters</span></span>
+<span id="cb37-8"><a href="#cb37-8" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (year <span class="cf">in</span> years) {</span>
+<span id="cb37-9"><a href="#cb37-9" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> (qtr <span class="cf">in</span> quarters) {</span>
+<span id="cb37-10"><a href="#cb37-10" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Fetch data for the given year and quarter</span></span>
+<span id="cb37-11"><a href="#cb37-11" aria-hidden="true" tabindex="-1"></a>    data <span class="ot">&lt;-</span> <span class="fu">qcewGetIndustryData</span>(year, qtr, industry)</span>
+<span id="cb37-12"><a href="#cb37-12" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb37-13"><a href="#cb37-13" aria-hidden="true" tabindex="-1"></a>   <span class="co"># Add the year_quarter column</span></span>
+<span id="cb37-14"><a href="#cb37-14" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (<span class="sc">!</span><span class="fu">is.null</span>(data)) {</span>
+<span id="cb37-15"><a href="#cb37-15" aria-hidden="true" tabindex="-1"></a>      year_quarter <span class="ot">&lt;-</span> <span class="fu">paste</span>(year, <span class="st">"Q"</span>, qtr, <span class="at">sep =</span> <span class="st">"_"</span>)  <span class="co"># e.g., "2000_Q1"</span></span>
+<span id="cb37-16"><a href="#cb37-16" aria-hidden="true" tabindex="-1"></a>      data<span class="sc">$</span>year_quarter <span class="ot">&lt;-</span> year_quarter  <span class="co"># Add as a new column</span></span>
+<span id="cb37-17"><a href="#cb37-17" aria-hidden="true" tabindex="-1"></a>      finance[[year_quarter]] <span class="ot">&lt;-</span> data  <span class="co"># Store in the list</span></span>
+<span id="cb37-18"><a href="#cb37-18" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb37-19"><a href="#cb37-19" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb37-20"><a href="#cb37-20" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb37-21"><a href="#cb37-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-22"><a href="#cb37-22" aria-hidden="true" tabindex="-1"></a>finance <span class="ot">&lt;-</span> <span class="fu">do.call</span>(rbind, finance)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb38"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a>finance <span class="ot">&lt;-</span> finance <span class="sc">%&gt;%</span></span>
+<span id="cb38-2"><a href="#cb38-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(area_fips, own_code, oty_month3_emplvl_pct_chg, year_quarter)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb39"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a>area_fips_values <span class="ot">&lt;-</span> <span class="fu">c</span>(</span>
+<span id="cb39-2"><a href="#cb39-2" aria-hidden="true" tabindex="-1"></a>  <span class="dv">01000</span>, <span class="dv">02000</span>, <span class="dv">04000</span>, <span class="dv">05000</span>, <span class="dv">06000</span>, <span class="dv">08000</span>, <span class="dv">09000</span>, <span class="dv">10000</span>, <span class="dv">12000</span>, <span class="dv">13000</span>, </span>
+<span id="cb39-3"><a href="#cb39-3" aria-hidden="true" tabindex="-1"></a>  <span class="dv">15000</span>, <span class="dv">16000</span>, <span class="dv">17000</span>, <span class="dv">18000</span>, <span class="dv">19000</span>, <span class="dv">20000</span>, <span class="dv">21000</span>, <span class="dv">22000</span>, <span class="dv">23000</span>, <span class="dv">24000</span>, </span>
+<span id="cb39-4"><a href="#cb39-4" aria-hidden="true" tabindex="-1"></a>  <span class="dv">25000</span>, <span class="dv">26000</span>, <span class="dv">27000</span>, <span class="dv">28000</span>, <span class="dv">29000</span>, <span class="dv">30000</span>, <span class="dv">31000</span>, <span class="dv">32000</span>, <span class="dv">33000</span>, <span class="dv">34000</span>, </span>
+<span id="cb39-5"><a href="#cb39-5" aria-hidden="true" tabindex="-1"></a>  <span class="dv">35000</span>, <span class="dv">36000</span>, <span class="dv">37000</span>, <span class="dv">38000</span>, <span class="dv">39000</span>, <span class="dv">40000</span>, <span class="dv">41000</span>, <span class="dv">42000</span>, <span class="dv">44000</span>, <span class="dv">45000</span>, </span>
+<span id="cb39-6"><a href="#cb39-6" aria-hidden="true" tabindex="-1"></a>  <span class="dv">46000</span>, <span class="dv">47000</span>, <span class="dv">48000</span>, <span class="dv">49000</span>, <span class="dv">50000</span>, <span class="dv">51000</span>, <span class="dv">53000</span>, <span class="dv">54000</span>, <span class="dv">55000</span>, <span class="dv">56000</span>, </span>
+<span id="cb39-7"><a href="#cb39-7" aria-hidden="true" tabindex="-1"></a>  <span class="dv">72000</span>, <span class="dv">78000</span></span>
+<span id="cb39-8"><a href="#cb39-8" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb39-9"><a href="#cb39-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb39-10"><a href="#cb39-10" aria-hidden="true" tabindex="-1"></a>finance <span class="ot">&lt;-</span> finance <span class="sc">%&gt;%</span></span>
+<span id="cb39-11"><a href="#cb39-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(area_fips <span class="sc">%in%</span> area_fips_values, own_code <span class="sc">==</span> <span class="dv">5</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb40"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a>finance <span class="ot">&lt;-</span> finance <span class="sc">%&gt;%</span></span>
+<span id="cb40-2"><a href="#cb40-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(area_fips <span class="sc">%in%</span> <span class="fu">c</span>(</span>
+<span id="cb40-3"><a href="#cb40-3" aria-hidden="true" tabindex="-1"></a>    <span class="dv">01000</span>, <span class="dv">02000</span>, <span class="dv">04000</span>, <span class="dv">05000</span>, <span class="dv">06000</span>, <span class="dv">08000</span>, <span class="dv">09000</span>, <span class="dv">10000</span>, <span class="dv">12000</span>, <span class="dv">13000</span>, </span>
+<span id="cb40-4"><a href="#cb40-4" aria-hidden="true" tabindex="-1"></a>    <span class="dv">15000</span>, <span class="dv">16000</span>, <span class="dv">17000</span>, <span class="dv">18000</span>, <span class="dv">19000</span>, <span class="dv">20000</span>, <span class="dv">21000</span>, <span class="dv">22000</span>, <span class="dv">23000</span>, <span class="dv">24000</span>, </span>
+<span id="cb40-5"><a href="#cb40-5" aria-hidden="true" tabindex="-1"></a>    <span class="dv">25000</span>, <span class="dv">26000</span>, <span class="dv">27000</span>, <span class="dv">28000</span>, <span class="dv">29000</span>, <span class="dv">30000</span>, <span class="dv">31000</span>, <span class="dv">32000</span>, <span class="dv">33000</span>, <span class="dv">34000</span>, </span>
+<span id="cb40-6"><a href="#cb40-6" aria-hidden="true" tabindex="-1"></a>    <span class="dv">35000</span>, <span class="dv">36000</span>, <span class="dv">37000</span>, <span class="dv">38000</span>, <span class="dv">39000</span>, <span class="dv">40000</span>, <span class="dv">41000</span>, <span class="dv">42000</span>, <span class="dv">44000</span>, <span class="dv">45000</span>, </span>
+<span id="cb40-7"><a href="#cb40-7" aria-hidden="true" tabindex="-1"></a>    <span class="dv">46000</span>, <span class="dv">47000</span>, <span class="dv">48000</span>, <span class="dv">49000</span>, <span class="dv">50000</span>, <span class="dv">51000</span>, <span class="dv">53000</span>, <span class="dv">54000</span>, <span class="dv">55000</span>, <span class="dv">56000</span>, </span>
+<span id="cb40-8"><a href="#cb40-8" aria-hidden="true" tabindex="-1"></a>    <span class="dv">72000</span>, <span class="dv">78000</span></span>
+<span id="cb40-9"><a href="#cb40-9" aria-hidden="true" tabindex="-1"></a>  )) <span class="sc">%&gt;%</span></span>
+<span id="cb40-10"><a href="#cb40-10" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb40-11"><a href="#cb40-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">state =</span> <span class="fu">case_when</span>(</span>
+<span id="cb40-12"><a href="#cb40-12" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">01000</span> <span class="sc">~</span> <span class="st">"Alabama"</span>,</span>
+<span id="cb40-13"><a href="#cb40-13" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">02000</span> <span class="sc">~</span> <span class="st">"Alaska"</span>,</span>
+<span id="cb40-14"><a href="#cb40-14" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">04000</span> <span class="sc">~</span> <span class="st">"Arizona"</span>,</span>
+<span id="cb40-15"><a href="#cb40-15" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">05000</span> <span class="sc">~</span> <span class="st">"Arkansas"</span>,</span>
+<span id="cb40-16"><a href="#cb40-16" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">06000</span> <span class="sc">~</span> <span class="st">"California"</span>,</span>
+<span id="cb40-17"><a href="#cb40-17" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">08000</span> <span class="sc">~</span> <span class="st">"Colorado"</span>,</span>
+<span id="cb40-18"><a href="#cb40-18" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">09000</span> <span class="sc">~</span> <span class="st">"Connecticut"</span>,</span>
+<span id="cb40-19"><a href="#cb40-19" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">10000</span> <span class="sc">~</span> <span class="st">"Delaware"</span>,</span>
+<span id="cb40-20"><a href="#cb40-20" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">12000</span> <span class="sc">~</span> <span class="st">"Florida"</span>,</span>
+<span id="cb40-21"><a href="#cb40-21" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">13000</span> <span class="sc">~</span> <span class="st">"Georgia"</span>,</span>
+<span id="cb40-22"><a href="#cb40-22" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">15000</span> <span class="sc">~</span> <span class="st">"Hawaii"</span>,</span>
+<span id="cb40-23"><a href="#cb40-23" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">16000</span> <span class="sc">~</span> <span class="st">"Idaho"</span>,</span>
+<span id="cb40-24"><a href="#cb40-24" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">17000</span> <span class="sc">~</span> <span class="st">"Illinois"</span>,</span>
+<span id="cb40-25"><a href="#cb40-25" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">18000</span> <span class="sc">~</span> <span class="st">"Indiana"</span>,</span>
+<span id="cb40-26"><a href="#cb40-26" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">19000</span> <span class="sc">~</span> <span class="st">"Iowa"</span>,</span>
+<span id="cb40-27"><a href="#cb40-27" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">20000</span> <span class="sc">~</span> <span class="st">"Kansas"</span>,</span>
+<span id="cb40-28"><a href="#cb40-28" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">21000</span> <span class="sc">~</span> <span class="st">"Kentucky"</span>,</span>
+<span id="cb40-29"><a href="#cb40-29" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">22000</span> <span class="sc">~</span> <span class="st">"Louisiana"</span>,</span>
+<span id="cb40-30"><a href="#cb40-30" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">23000</span> <span class="sc">~</span> <span class="st">"Maine"</span>,</span>
+<span id="cb40-31"><a href="#cb40-31" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">24000</span> <span class="sc">~</span> <span class="st">"Maryland"</span>,</span>
+<span id="cb40-32"><a href="#cb40-32" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">25000</span> <span class="sc">~</span> <span class="st">"Massachusetts"</span>,</span>
+<span id="cb40-33"><a href="#cb40-33" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">26000</span> <span class="sc">~</span> <span class="st">"Michigan"</span>,</span>
+<span id="cb40-34"><a href="#cb40-34" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">27000</span> <span class="sc">~</span> <span class="st">"Minnesota"</span>,</span>
+<span id="cb40-35"><a href="#cb40-35" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">28000</span> <span class="sc">~</span> <span class="st">"Mississippi"</span>,</span>
+<span id="cb40-36"><a href="#cb40-36" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">29000</span> <span class="sc">~</span> <span class="st">"Missouri"</span>,</span>
+<span id="cb40-37"><a href="#cb40-37" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">30000</span> <span class="sc">~</span> <span class="st">"Montana"</span>,</span>
+<span id="cb40-38"><a href="#cb40-38" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">31000</span> <span class="sc">~</span> <span class="st">"Nebraska"</span>,</span>
+<span id="cb40-39"><a href="#cb40-39" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">32000</span> <span class="sc">~</span> <span class="st">"Nevada"</span>,</span>
+<span id="cb40-40"><a href="#cb40-40" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">33000</span> <span class="sc">~</span> <span class="st">"New Hampshire"</span>,</span>
+<span id="cb40-41"><a href="#cb40-41" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">34000</span> <span class="sc">~</span> <span class="st">"New Jersey"</span>,</span>
+<span id="cb40-42"><a href="#cb40-42" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">35000</span> <span class="sc">~</span> <span class="st">"New Mexico"</span>,</span>
+<span id="cb40-43"><a href="#cb40-43" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">36000</span> <span class="sc">~</span> <span class="st">"New York"</span>,</span>
+<span id="cb40-44"><a href="#cb40-44" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">37000</span> <span class="sc">~</span> <span class="st">"North Carolina"</span>,</span>
+<span id="cb40-45"><a href="#cb40-45" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">38000</span> <span class="sc">~</span> <span class="st">"North Dakota"</span>,</span>
+<span id="cb40-46"><a href="#cb40-46" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">39000</span> <span class="sc">~</span> <span class="st">"Ohio"</span>,</span>
+<span id="cb40-47"><a href="#cb40-47" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">40000</span> <span class="sc">~</span> <span class="st">"Oklahoma"</span>,</span>
+<span id="cb40-48"><a href="#cb40-48" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">41000</span> <span class="sc">~</span> <span class="st">"Oregon"</span>,</span>
+<span id="cb40-49"><a href="#cb40-49" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">42000</span> <span class="sc">~</span> <span class="st">"Pennsylvania"</span>,</span>
+<span id="cb40-50"><a href="#cb40-50" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">44000</span> <span class="sc">~</span> <span class="st">"Rhode Island"</span>,</span>
+<span id="cb40-51"><a href="#cb40-51" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">45000</span> <span class="sc">~</span> <span class="st">"South Carolina"</span>,</span>
+<span id="cb40-52"><a href="#cb40-52" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">46000</span> <span class="sc">~</span> <span class="st">"South Dakota"</span>,</span>
+<span id="cb40-53"><a href="#cb40-53" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">47000</span> <span class="sc">~</span> <span class="st">"Tennessee"</span>,</span>
+<span id="cb40-54"><a href="#cb40-54" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">48000</span> <span class="sc">~</span> <span class="st">"Texas"</span>,</span>
+<span id="cb40-55"><a href="#cb40-55" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">49000</span> <span class="sc">~</span> <span class="st">"Utah"</span>,</span>
+<span id="cb40-56"><a href="#cb40-56" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">50000</span> <span class="sc">~</span> <span class="st">"Vermont"</span>,</span>
+<span id="cb40-57"><a href="#cb40-57" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">51000</span> <span class="sc">~</span> <span class="st">"Virginia"</span>,</span>
+<span id="cb40-58"><a href="#cb40-58" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">53000</span> <span class="sc">~</span> <span class="st">"Washington"</span>,</span>
+<span id="cb40-59"><a href="#cb40-59" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">54000</span> <span class="sc">~</span> <span class="st">"West Virginia"</span>,</span>
+<span id="cb40-60"><a href="#cb40-60" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">55000</span> <span class="sc">~</span> <span class="st">"Wisconsin"</span>,</span>
+<span id="cb40-61"><a href="#cb40-61" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">56000</span> <span class="sc">~</span> <span class="st">"Wyoming"</span>,</span>
+<span id="cb40-62"><a href="#cb40-62" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">72000</span> <span class="sc">~</span> <span class="st">"Puerto Rico"</span>,</span>
+<span id="cb40-63"><a href="#cb40-63" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">78000</span> <span class="sc">~</span> <span class="st">"Virgin Islands"</span>,</span>
+<span id="cb40-64"><a href="#cb40-64" aria-hidden="true" tabindex="-1"></a>    <span class="cn">TRUE</span> <span class="sc">~</span> <span class="cn">NA_character_</span> <span class="co"># Default for unmatched values</span></span>
+<span id="cb40-65"><a href="#cb40-65" aria-hidden="true" tabindex="-1"></a>  ))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>2.4 Call in industry: Professional and business services</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb41"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a>professional <span class="ot">&lt;-</span> <span class="fu">list</span>()</span>
+<span id="cb41-2"><a href="#cb41-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb41-3"><a href="#cb41-3" aria-hidden="true" tabindex="-1"></a>years <span class="ot">&lt;-</span> <span class="dv">2014</span><span class="sc">:</span><span class="dv">2023</span></span>
+<span id="cb41-4"><a href="#cb41-4" aria-hidden="true" tabindex="-1"></a>quarters <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"1"</span>, <span class="st">"2"</span>, <span class="st">"3"</span>, <span class="st">"4"</span>)</span>
+<span id="cb41-5"><a href="#cb41-5" aria-hidden="true" tabindex="-1"></a>industry <span class="ot">&lt;-</span> <span class="st">"1024"</span>  </span>
+<span id="cb41-6"><a href="#cb41-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb41-7"><a href="#cb41-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Loop through years and quarters</span></span>
+<span id="cb41-8"><a href="#cb41-8" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (year <span class="cf">in</span> years) {</span>
+<span id="cb41-9"><a href="#cb41-9" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> (qtr <span class="cf">in</span> quarters) {</span>
+<span id="cb41-10"><a href="#cb41-10" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Fetch data for the given year and quarter</span></span>
+<span id="cb41-11"><a href="#cb41-11" aria-hidden="true" tabindex="-1"></a>    data <span class="ot">&lt;-</span> <span class="fu">qcewGetIndustryData</span>(year, qtr, industry)</span>
+<span id="cb41-12"><a href="#cb41-12" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb41-13"><a href="#cb41-13" aria-hidden="true" tabindex="-1"></a>   <span class="co"># Add the year_quarter column</span></span>
+<span id="cb41-14"><a href="#cb41-14" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (<span class="sc">!</span><span class="fu">is.null</span>(data)) {</span>
+<span id="cb41-15"><a href="#cb41-15" aria-hidden="true" tabindex="-1"></a>      year_quarter <span class="ot">&lt;-</span> <span class="fu">paste</span>(year, <span class="st">"Q"</span>, qtr, <span class="at">sep =</span> <span class="st">"_"</span>)  <span class="co"># e.g., "2000_Q1"</span></span>
+<span id="cb41-16"><a href="#cb41-16" aria-hidden="true" tabindex="-1"></a>      data<span class="sc">$</span>year_quarter <span class="ot">&lt;-</span> year_quarter  <span class="co"># Add as a new column</span></span>
+<span id="cb41-17"><a href="#cb41-17" aria-hidden="true" tabindex="-1"></a>      professional[[year_quarter]] <span class="ot">&lt;-</span> data  <span class="co"># Store in the list</span></span>
+<span id="cb41-18"><a href="#cb41-18" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb41-19"><a href="#cb41-19" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb41-20"><a href="#cb41-20" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb41-21"><a href="#cb41-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb41-22"><a href="#cb41-22" aria-hidden="true" tabindex="-1"></a>professional <span class="ot">&lt;-</span> <span class="fu">do.call</span>(rbind, professional)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb42"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true" tabindex="-1"></a>professional <span class="ot">&lt;-</span> professional <span class="sc">%&gt;%</span></span>
+<span id="cb42-2"><a href="#cb42-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(area_fips, own_code, oty_month3_emplvl_pct_chg, year_quarter)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb43"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb43-1"><a href="#cb43-1" aria-hidden="true" tabindex="-1"></a>area_fips_values <span class="ot">&lt;-</span> <span class="fu">c</span>(</span>
+<span id="cb43-2"><a href="#cb43-2" aria-hidden="true" tabindex="-1"></a>  <span class="dv">01000</span>, <span class="dv">02000</span>, <span class="dv">04000</span>, <span class="dv">05000</span>, <span class="dv">06000</span>, <span class="dv">08000</span>, <span class="dv">09000</span>, <span class="dv">10000</span>, <span class="dv">12000</span>, <span class="dv">13000</span>, </span>
+<span id="cb43-3"><a href="#cb43-3" aria-hidden="true" tabindex="-1"></a>  <span class="dv">15000</span>, <span class="dv">16000</span>, <span class="dv">17000</span>, <span class="dv">18000</span>, <span class="dv">19000</span>, <span class="dv">20000</span>, <span class="dv">21000</span>, <span class="dv">22000</span>, <span class="dv">23000</span>, <span class="dv">24000</span>, </span>
+<span id="cb43-4"><a href="#cb43-4" aria-hidden="true" tabindex="-1"></a>  <span class="dv">25000</span>, <span class="dv">26000</span>, <span class="dv">27000</span>, <span class="dv">28000</span>, <span class="dv">29000</span>, <span class="dv">30000</span>, <span class="dv">31000</span>, <span class="dv">32000</span>, <span class="dv">33000</span>, <span class="dv">34000</span>, </span>
+<span id="cb43-5"><a href="#cb43-5" aria-hidden="true" tabindex="-1"></a>  <span class="dv">35000</span>, <span class="dv">36000</span>, <span class="dv">37000</span>, <span class="dv">38000</span>, <span class="dv">39000</span>, <span class="dv">40000</span>, <span class="dv">41000</span>, <span class="dv">42000</span>, <span class="dv">44000</span>, <span class="dv">45000</span>, </span>
+<span id="cb43-6"><a href="#cb43-6" aria-hidden="true" tabindex="-1"></a>  <span class="dv">46000</span>, <span class="dv">47000</span>, <span class="dv">48000</span>, <span class="dv">49000</span>, <span class="dv">50000</span>, <span class="dv">51000</span>, <span class="dv">53000</span>, <span class="dv">54000</span>, <span class="dv">55000</span>, <span class="dv">56000</span>, </span>
+<span id="cb43-7"><a href="#cb43-7" aria-hidden="true" tabindex="-1"></a>  <span class="dv">72000</span>, <span class="dv">78000</span></span>
+<span id="cb43-8"><a href="#cb43-8" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb43-9"><a href="#cb43-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb43-10"><a href="#cb43-10" aria-hidden="true" tabindex="-1"></a>professional <span class="ot">&lt;-</span> professional <span class="sc">%&gt;%</span></span>
+<span id="cb43-11"><a href="#cb43-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(area_fips <span class="sc">%in%</span> area_fips_values, own_code <span class="sc">==</span> <span class="dv">5</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb44"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb44-1"><a href="#cb44-1" aria-hidden="true" tabindex="-1"></a>professional <span class="ot">&lt;-</span> professional <span class="sc">%&gt;%</span></span>
+<span id="cb44-2"><a href="#cb44-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(area_fips <span class="sc">%in%</span> <span class="fu">c</span>(</span>
+<span id="cb44-3"><a href="#cb44-3" aria-hidden="true" tabindex="-1"></a>    <span class="dv">01000</span>, <span class="dv">02000</span>, <span class="dv">04000</span>, <span class="dv">05000</span>, <span class="dv">06000</span>, <span class="dv">08000</span>, <span class="dv">09000</span>, <span class="dv">10000</span>, <span class="dv">12000</span>, <span class="dv">13000</span>, </span>
+<span id="cb44-4"><a href="#cb44-4" aria-hidden="true" tabindex="-1"></a>    <span class="dv">15000</span>, <span class="dv">16000</span>, <span class="dv">17000</span>, <span class="dv">18000</span>, <span class="dv">19000</span>, <span class="dv">20000</span>, <span class="dv">21000</span>, <span class="dv">22000</span>, <span class="dv">23000</span>, <span class="dv">24000</span>, </span>
+<span id="cb44-5"><a href="#cb44-5" aria-hidden="true" tabindex="-1"></a>    <span class="dv">25000</span>, <span class="dv">26000</span>, <span class="dv">27000</span>, <span class="dv">28000</span>, <span class="dv">29000</span>, <span class="dv">30000</span>, <span class="dv">31000</span>, <span class="dv">32000</span>, <span class="dv">33000</span>, <span class="dv">34000</span>, </span>
+<span id="cb44-6"><a href="#cb44-6" aria-hidden="true" tabindex="-1"></a>    <span class="dv">35000</span>, <span class="dv">36000</span>, <span class="dv">37000</span>, <span class="dv">38000</span>, <span class="dv">39000</span>, <span class="dv">40000</span>, <span class="dv">41000</span>, <span class="dv">42000</span>, <span class="dv">44000</span>, <span class="dv">45000</span>, </span>
+<span id="cb44-7"><a href="#cb44-7" aria-hidden="true" tabindex="-1"></a>    <span class="dv">46000</span>, <span class="dv">47000</span>, <span class="dv">48000</span>, <span class="dv">49000</span>, <span class="dv">50000</span>, <span class="dv">51000</span>, <span class="dv">53000</span>, <span class="dv">54000</span>, <span class="dv">55000</span>, <span class="dv">56000</span>, </span>
+<span id="cb44-8"><a href="#cb44-8" aria-hidden="true" tabindex="-1"></a>    <span class="dv">72000</span>, <span class="dv">78000</span></span>
+<span id="cb44-9"><a href="#cb44-9" aria-hidden="true" tabindex="-1"></a>  )) <span class="sc">%&gt;%</span></span>
+<span id="cb44-10"><a href="#cb44-10" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb44-11"><a href="#cb44-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">state =</span> <span class="fu">case_when</span>(</span>
+<span id="cb44-12"><a href="#cb44-12" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">01000</span> <span class="sc">~</span> <span class="st">"Alabama"</span>,</span>
+<span id="cb44-13"><a href="#cb44-13" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">02000</span> <span class="sc">~</span> <span class="st">"Alaska"</span>,</span>
+<span id="cb44-14"><a href="#cb44-14" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">04000</span> <span class="sc">~</span> <span class="st">"Arizona"</span>,</span>
+<span id="cb44-15"><a href="#cb44-15" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">05000</span> <span class="sc">~</span> <span class="st">"Arkansas"</span>,</span>
+<span id="cb44-16"><a href="#cb44-16" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">06000</span> <span class="sc">~</span> <span class="st">"California"</span>,</span>
+<span id="cb44-17"><a href="#cb44-17" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">08000</span> <span class="sc">~</span> <span class="st">"Colorado"</span>,</span>
+<span id="cb44-18"><a href="#cb44-18" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">09000</span> <span class="sc">~</span> <span class="st">"Connecticut"</span>,</span>
+<span id="cb44-19"><a href="#cb44-19" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">10000</span> <span class="sc">~</span> <span class="st">"Delaware"</span>,</span>
+<span id="cb44-20"><a href="#cb44-20" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">12000</span> <span class="sc">~</span> <span class="st">"Florida"</span>,</span>
+<span id="cb44-21"><a href="#cb44-21" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">13000</span> <span class="sc">~</span> <span class="st">"Georgia"</span>,</span>
+<span id="cb44-22"><a href="#cb44-22" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">15000</span> <span class="sc">~</span> <span class="st">"Hawaii"</span>,</span>
+<span id="cb44-23"><a href="#cb44-23" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">16000</span> <span class="sc">~</span> <span class="st">"Idaho"</span>,</span>
+<span id="cb44-24"><a href="#cb44-24" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">17000</span> <span class="sc">~</span> <span class="st">"Illinois"</span>,</span>
+<span id="cb44-25"><a href="#cb44-25" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">18000</span> <span class="sc">~</span> <span class="st">"Indiana"</span>,</span>
+<span id="cb44-26"><a href="#cb44-26" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">19000</span> <span class="sc">~</span> <span class="st">"Iowa"</span>,</span>
+<span id="cb44-27"><a href="#cb44-27" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">20000</span> <span class="sc">~</span> <span class="st">"Kansas"</span>,</span>
+<span id="cb44-28"><a href="#cb44-28" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">21000</span> <span class="sc">~</span> <span class="st">"Kentucky"</span>,</span>
+<span id="cb44-29"><a href="#cb44-29" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">22000</span> <span class="sc">~</span> <span class="st">"Louisiana"</span>,</span>
+<span id="cb44-30"><a href="#cb44-30" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">23000</span> <span class="sc">~</span> <span class="st">"Maine"</span>,</span>
+<span id="cb44-31"><a href="#cb44-31" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">24000</span> <span class="sc">~</span> <span class="st">"Maryland"</span>,</span>
+<span id="cb44-32"><a href="#cb44-32" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">25000</span> <span class="sc">~</span> <span class="st">"Massachusetts"</span>,</span>
+<span id="cb44-33"><a href="#cb44-33" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">26000</span> <span class="sc">~</span> <span class="st">"Michigan"</span>,</span>
+<span id="cb44-34"><a href="#cb44-34" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">27000</span> <span class="sc">~</span> <span class="st">"Minnesota"</span>,</span>
+<span id="cb44-35"><a href="#cb44-35" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">28000</span> <span class="sc">~</span> <span class="st">"Mississippi"</span>,</span>
+<span id="cb44-36"><a href="#cb44-36" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">29000</span> <span class="sc">~</span> <span class="st">"Missouri"</span>,</span>
+<span id="cb44-37"><a href="#cb44-37" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">30000</span> <span class="sc">~</span> <span class="st">"Montana"</span>,</span>
+<span id="cb44-38"><a href="#cb44-38" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">31000</span> <span class="sc">~</span> <span class="st">"Nebraska"</span>,</span>
+<span id="cb44-39"><a href="#cb44-39" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">32000</span> <span class="sc">~</span> <span class="st">"Nevada"</span>,</span>
+<span id="cb44-40"><a href="#cb44-40" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">33000</span> <span class="sc">~</span> <span class="st">"New Hampshire"</span>,</span>
+<span id="cb44-41"><a href="#cb44-41" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">34000</span> <span class="sc">~</span> <span class="st">"New Jersey"</span>,</span>
+<span id="cb44-42"><a href="#cb44-42" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">35000</span> <span class="sc">~</span> <span class="st">"New Mexico"</span>,</span>
+<span id="cb44-43"><a href="#cb44-43" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">36000</span> <span class="sc">~</span> <span class="st">"New York"</span>,</span>
+<span id="cb44-44"><a href="#cb44-44" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">37000</span> <span class="sc">~</span> <span class="st">"North Carolina"</span>,</span>
+<span id="cb44-45"><a href="#cb44-45" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">38000</span> <span class="sc">~</span> <span class="st">"North Dakota"</span>,</span>
+<span id="cb44-46"><a href="#cb44-46" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">39000</span> <span class="sc">~</span> <span class="st">"Ohio"</span>,</span>
+<span id="cb44-47"><a href="#cb44-47" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">40000</span> <span class="sc">~</span> <span class="st">"Oklahoma"</span>,</span>
+<span id="cb44-48"><a href="#cb44-48" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">41000</span> <span class="sc">~</span> <span class="st">"Oregon"</span>,</span>
+<span id="cb44-49"><a href="#cb44-49" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">42000</span> <span class="sc">~</span> <span class="st">"Pennsylvania"</span>,</span>
+<span id="cb44-50"><a href="#cb44-50" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">44000</span> <span class="sc">~</span> <span class="st">"Rhode Island"</span>,</span>
+<span id="cb44-51"><a href="#cb44-51" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">45000</span> <span class="sc">~</span> <span class="st">"South Carolina"</span>,</span>
+<span id="cb44-52"><a href="#cb44-52" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">46000</span> <span class="sc">~</span> <span class="st">"South Dakota"</span>,</span>
+<span id="cb44-53"><a href="#cb44-53" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">47000</span> <span class="sc">~</span> <span class="st">"Tennessee"</span>,</span>
+<span id="cb44-54"><a href="#cb44-54" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">48000</span> <span class="sc">~</span> <span class="st">"Texas"</span>,</span>
+<span id="cb44-55"><a href="#cb44-55" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">49000</span> <span class="sc">~</span> <span class="st">"Utah"</span>,</span>
+<span id="cb44-56"><a href="#cb44-56" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">50000</span> <span class="sc">~</span> <span class="st">"Vermont"</span>,</span>
+<span id="cb44-57"><a href="#cb44-57" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">51000</span> <span class="sc">~</span> <span class="st">"Virginia"</span>,</span>
+<span id="cb44-58"><a href="#cb44-58" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">53000</span> <span class="sc">~</span> <span class="st">"Washington"</span>,</span>
+<span id="cb44-59"><a href="#cb44-59" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">54000</span> <span class="sc">~</span> <span class="st">"West Virginia"</span>,</span>
+<span id="cb44-60"><a href="#cb44-60" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">55000</span> <span class="sc">~</span> <span class="st">"Wisconsin"</span>,</span>
+<span id="cb44-61"><a href="#cb44-61" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">56000</span> <span class="sc">~</span> <span class="st">"Wyoming"</span>,</span>
+<span id="cb44-62"><a href="#cb44-62" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">72000</span> <span class="sc">~</span> <span class="st">"Puerto Rico"</span>,</span>
+<span id="cb44-63"><a href="#cb44-63" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">78000</span> <span class="sc">~</span> <span class="st">"Virgin Islands"</span>,</span>
+<span id="cb44-64"><a href="#cb44-64" aria-hidden="true" tabindex="-1"></a>    <span class="cn">TRUE</span> <span class="sc">~</span> <span class="cn">NA_character_</span> <span class="co"># Default for unmatched values</span></span>
+<span id="cb44-65"><a href="#cb44-65" aria-hidden="true" tabindex="-1"></a>  ))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>2.5 Call in industry: education and health</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb45"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb45-1"><a href="#cb45-1" aria-hidden="true" tabindex="-1"></a>education <span class="ot">&lt;-</span> <span class="fu">list</span>()</span>
+<span id="cb45-2"><a href="#cb45-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb45-3"><a href="#cb45-3" aria-hidden="true" tabindex="-1"></a>years <span class="ot">&lt;-</span> <span class="dv">2014</span><span class="sc">:</span><span class="dv">2023</span></span>
+<span id="cb45-4"><a href="#cb45-4" aria-hidden="true" tabindex="-1"></a>quarters <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"1"</span>, <span class="st">"2"</span>, <span class="st">"3"</span>, <span class="st">"4"</span>)</span>
+<span id="cb45-5"><a href="#cb45-5" aria-hidden="true" tabindex="-1"></a>industry <span class="ot">&lt;-</span> <span class="st">"1025"</span>  </span>
+<span id="cb45-6"><a href="#cb45-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb45-7"><a href="#cb45-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Loop through years and quarters</span></span>
+<span id="cb45-8"><a href="#cb45-8" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (year <span class="cf">in</span> years) {</span>
+<span id="cb45-9"><a href="#cb45-9" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> (qtr <span class="cf">in</span> quarters) {</span>
+<span id="cb45-10"><a href="#cb45-10" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Fetch data for the given year and quarter</span></span>
+<span id="cb45-11"><a href="#cb45-11" aria-hidden="true" tabindex="-1"></a>    data <span class="ot">&lt;-</span> <span class="fu">qcewGetIndustryData</span>(year, qtr, industry)</span>
+<span id="cb45-12"><a href="#cb45-12" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb45-13"><a href="#cb45-13" aria-hidden="true" tabindex="-1"></a>   <span class="co"># Add the year_quarter column</span></span>
+<span id="cb45-14"><a href="#cb45-14" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (<span class="sc">!</span><span class="fu">is.null</span>(data)) {</span>
+<span id="cb45-15"><a href="#cb45-15" aria-hidden="true" tabindex="-1"></a>      year_quarter <span class="ot">&lt;-</span> <span class="fu">paste</span>(year, <span class="st">"Q"</span>, qtr, <span class="at">sep =</span> <span class="st">"_"</span>)  <span class="co"># e.g., "2000_Q1"</span></span>
+<span id="cb45-16"><a href="#cb45-16" aria-hidden="true" tabindex="-1"></a>      data<span class="sc">$</span>year_quarter <span class="ot">&lt;-</span> year_quarter  <span class="co"># Add as a new column</span></span>
+<span id="cb45-17"><a href="#cb45-17" aria-hidden="true" tabindex="-1"></a>      education[[year_quarter]] <span class="ot">&lt;-</span> data  <span class="co"># Store in the list</span></span>
+<span id="cb45-18"><a href="#cb45-18" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb45-19"><a href="#cb45-19" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb45-20"><a href="#cb45-20" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb45-21"><a href="#cb45-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb45-22"><a href="#cb45-22" aria-hidden="true" tabindex="-1"></a>education <span class="ot">&lt;-</span> <span class="fu">do.call</span>(rbind, education)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb46"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb46-1"><a href="#cb46-1" aria-hidden="true" tabindex="-1"></a>education <span class="ot">&lt;-</span> education <span class="sc">%&gt;%</span></span>
+<span id="cb46-2"><a href="#cb46-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(area_fips, own_code, oty_month3_emplvl_pct_chg, year_quarter)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb47"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb47-1"><a href="#cb47-1" aria-hidden="true" tabindex="-1"></a>area_fips_values <span class="ot">&lt;-</span> <span class="fu">c</span>(</span>
+<span id="cb47-2"><a href="#cb47-2" aria-hidden="true" tabindex="-1"></a>  <span class="dv">01000</span>, <span class="dv">02000</span>, <span class="dv">04000</span>, <span class="dv">05000</span>, <span class="dv">06000</span>, <span class="dv">08000</span>, <span class="dv">09000</span>, <span class="dv">10000</span>, <span class="dv">12000</span>, <span class="dv">13000</span>, </span>
+<span id="cb47-3"><a href="#cb47-3" aria-hidden="true" tabindex="-1"></a>  <span class="dv">15000</span>, <span class="dv">16000</span>, <span class="dv">17000</span>, <span class="dv">18000</span>, <span class="dv">19000</span>, <span class="dv">20000</span>, <span class="dv">21000</span>, <span class="dv">22000</span>, <span class="dv">23000</span>, <span class="dv">24000</span>, </span>
+<span id="cb47-4"><a href="#cb47-4" aria-hidden="true" tabindex="-1"></a>  <span class="dv">25000</span>, <span class="dv">26000</span>, <span class="dv">27000</span>, <span class="dv">28000</span>, <span class="dv">29000</span>, <span class="dv">30000</span>, <span class="dv">31000</span>, <span class="dv">32000</span>, <span class="dv">33000</span>, <span class="dv">34000</span>, </span>
+<span id="cb47-5"><a href="#cb47-5" aria-hidden="true" tabindex="-1"></a>  <span class="dv">35000</span>, <span class="dv">36000</span>, <span class="dv">37000</span>, <span class="dv">38000</span>, <span class="dv">39000</span>, <span class="dv">40000</span>, <span class="dv">41000</span>, <span class="dv">42000</span>, <span class="dv">44000</span>, <span class="dv">45000</span>, </span>
+<span id="cb47-6"><a href="#cb47-6" aria-hidden="true" tabindex="-1"></a>  <span class="dv">46000</span>, <span class="dv">47000</span>, <span class="dv">48000</span>, <span class="dv">49000</span>, <span class="dv">50000</span>, <span class="dv">51000</span>, <span class="dv">53000</span>, <span class="dv">54000</span>, <span class="dv">55000</span>, <span class="dv">56000</span>, </span>
+<span id="cb47-7"><a href="#cb47-7" aria-hidden="true" tabindex="-1"></a>  <span class="dv">72000</span>, <span class="dv">78000</span></span>
+<span id="cb47-8"><a href="#cb47-8" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb47-9"><a href="#cb47-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb47-10"><a href="#cb47-10" aria-hidden="true" tabindex="-1"></a>education <span class="ot">&lt;-</span> education <span class="sc">%&gt;%</span></span>
+<span id="cb47-11"><a href="#cb47-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(area_fips <span class="sc">%in%</span> area_fips_values, own_code <span class="sc">==</span> <span class="dv">5</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb48"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb48-1"><a href="#cb48-1" aria-hidden="true" tabindex="-1"></a>education <span class="ot">&lt;-</span> education <span class="sc">%&gt;%</span></span>
+<span id="cb48-2"><a href="#cb48-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(area_fips <span class="sc">%in%</span> <span class="fu">c</span>(</span>
+<span id="cb48-3"><a href="#cb48-3" aria-hidden="true" tabindex="-1"></a>    <span class="dv">01000</span>, <span class="dv">02000</span>, <span class="dv">04000</span>, <span class="dv">05000</span>, <span class="dv">06000</span>, <span class="dv">08000</span>, <span class="dv">09000</span>, <span class="dv">10000</span>, <span class="dv">12000</span>, <span class="dv">13000</span>, </span>
+<span id="cb48-4"><a href="#cb48-4" aria-hidden="true" tabindex="-1"></a>    <span class="dv">15000</span>, <span class="dv">16000</span>, <span class="dv">17000</span>, <span class="dv">18000</span>, <span class="dv">19000</span>, <span class="dv">20000</span>, <span class="dv">21000</span>, <span class="dv">22000</span>, <span class="dv">23000</span>, <span class="dv">24000</span>, </span>
+<span id="cb48-5"><a href="#cb48-5" aria-hidden="true" tabindex="-1"></a>    <span class="dv">25000</span>, <span class="dv">26000</span>, <span class="dv">27000</span>, <span class="dv">28000</span>, <span class="dv">29000</span>, <span class="dv">30000</span>, <span class="dv">31000</span>, <span class="dv">32000</span>, <span class="dv">33000</span>, <span class="dv">34000</span>, </span>
+<span id="cb48-6"><a href="#cb48-6" aria-hidden="true" tabindex="-1"></a>    <span class="dv">35000</span>, <span class="dv">36000</span>, <span class="dv">37000</span>, <span class="dv">38000</span>, <span class="dv">39000</span>, <span class="dv">40000</span>, <span class="dv">41000</span>, <span class="dv">42000</span>, <span class="dv">44000</span>, <span class="dv">45000</span>, </span>
+<span id="cb48-7"><a href="#cb48-7" aria-hidden="true" tabindex="-1"></a>    <span class="dv">46000</span>, <span class="dv">47000</span>, <span class="dv">48000</span>, <span class="dv">49000</span>, <span class="dv">50000</span>, <span class="dv">51000</span>, <span class="dv">53000</span>, <span class="dv">54000</span>, <span class="dv">55000</span>, <span class="dv">56000</span>, </span>
+<span id="cb48-8"><a href="#cb48-8" aria-hidden="true" tabindex="-1"></a>    <span class="dv">72000</span>, <span class="dv">78000</span></span>
+<span id="cb48-9"><a href="#cb48-9" aria-hidden="true" tabindex="-1"></a>  )) <span class="sc">%&gt;%</span></span>
+<span id="cb48-10"><a href="#cb48-10" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb48-11"><a href="#cb48-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">state =</span> <span class="fu">case_when</span>(</span>
+<span id="cb48-12"><a href="#cb48-12" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">01000</span> <span class="sc">~</span> <span class="st">"Alabama"</span>,</span>
+<span id="cb48-13"><a href="#cb48-13" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">02000</span> <span class="sc">~</span> <span class="st">"Alaska"</span>,</span>
+<span id="cb48-14"><a href="#cb48-14" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">04000</span> <span class="sc">~</span> <span class="st">"Arizona"</span>,</span>
+<span id="cb48-15"><a href="#cb48-15" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">05000</span> <span class="sc">~</span> <span class="st">"Arkansas"</span>,</span>
+<span id="cb48-16"><a href="#cb48-16" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">06000</span> <span class="sc">~</span> <span class="st">"California"</span>,</span>
+<span id="cb48-17"><a href="#cb48-17" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">08000</span> <span class="sc">~</span> <span class="st">"Colorado"</span>,</span>
+<span id="cb48-18"><a href="#cb48-18" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">09000</span> <span class="sc">~</span> <span class="st">"Connecticut"</span>,</span>
+<span id="cb48-19"><a href="#cb48-19" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">10000</span> <span class="sc">~</span> <span class="st">"Delaware"</span>,</span>
+<span id="cb48-20"><a href="#cb48-20" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">12000</span> <span class="sc">~</span> <span class="st">"Florida"</span>,</span>
+<span id="cb48-21"><a href="#cb48-21" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">13000</span> <span class="sc">~</span> <span class="st">"Georgia"</span>,</span>
+<span id="cb48-22"><a href="#cb48-22" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">15000</span> <span class="sc">~</span> <span class="st">"Hawaii"</span>,</span>
+<span id="cb48-23"><a href="#cb48-23" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">16000</span> <span class="sc">~</span> <span class="st">"Idaho"</span>,</span>
+<span id="cb48-24"><a href="#cb48-24" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">17000</span> <span class="sc">~</span> <span class="st">"Illinois"</span>,</span>
+<span id="cb48-25"><a href="#cb48-25" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">18000</span> <span class="sc">~</span> <span class="st">"Indiana"</span>,</span>
+<span id="cb48-26"><a href="#cb48-26" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">19000</span> <span class="sc">~</span> <span class="st">"Iowa"</span>,</span>
+<span id="cb48-27"><a href="#cb48-27" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">20000</span> <span class="sc">~</span> <span class="st">"Kansas"</span>,</span>
+<span id="cb48-28"><a href="#cb48-28" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">21000</span> <span class="sc">~</span> <span class="st">"Kentucky"</span>,</span>
+<span id="cb48-29"><a href="#cb48-29" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">22000</span> <span class="sc">~</span> <span class="st">"Louisiana"</span>,</span>
+<span id="cb48-30"><a href="#cb48-30" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">23000</span> <span class="sc">~</span> <span class="st">"Maine"</span>,</span>
+<span id="cb48-31"><a href="#cb48-31" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">24000</span> <span class="sc">~</span> <span class="st">"Maryland"</span>,</span>
+<span id="cb48-32"><a href="#cb48-32" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">25000</span> <span class="sc">~</span> <span class="st">"Massachusetts"</span>,</span>
+<span id="cb48-33"><a href="#cb48-33" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">26000</span> <span class="sc">~</span> <span class="st">"Michigan"</span>,</span>
+<span id="cb48-34"><a href="#cb48-34" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">27000</span> <span class="sc">~</span> <span class="st">"Minnesota"</span>,</span>
+<span id="cb48-35"><a href="#cb48-35" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">28000</span> <span class="sc">~</span> <span class="st">"Mississippi"</span>,</span>
+<span id="cb48-36"><a href="#cb48-36" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">29000</span> <span class="sc">~</span> <span class="st">"Missouri"</span>,</span>
+<span id="cb48-37"><a href="#cb48-37" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">30000</span> <span class="sc">~</span> <span class="st">"Montana"</span>,</span>
+<span id="cb48-38"><a href="#cb48-38" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">31000</span> <span class="sc">~</span> <span class="st">"Nebraska"</span>,</span>
+<span id="cb48-39"><a href="#cb48-39" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">32000</span> <span class="sc">~</span> <span class="st">"Nevada"</span>,</span>
+<span id="cb48-40"><a href="#cb48-40" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">33000</span> <span class="sc">~</span> <span class="st">"New Hampshire"</span>,</span>
+<span id="cb48-41"><a href="#cb48-41" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">34000</span> <span class="sc">~</span> <span class="st">"New Jersey"</span>,</span>
+<span id="cb48-42"><a href="#cb48-42" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">35000</span> <span class="sc">~</span> <span class="st">"New Mexico"</span>,</span>
+<span id="cb48-43"><a href="#cb48-43" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">36000</span> <span class="sc">~</span> <span class="st">"New York"</span>,</span>
+<span id="cb48-44"><a href="#cb48-44" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">37000</span> <span class="sc">~</span> <span class="st">"North Carolina"</span>,</span>
+<span id="cb48-45"><a href="#cb48-45" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">38000</span> <span class="sc">~</span> <span class="st">"North Dakota"</span>,</span>
+<span id="cb48-46"><a href="#cb48-46" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">39000</span> <span class="sc">~</span> <span class="st">"Ohio"</span>,</span>
+<span id="cb48-47"><a href="#cb48-47" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">40000</span> <span class="sc">~</span> <span class="st">"Oklahoma"</span>,</span>
+<span id="cb48-48"><a href="#cb48-48" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">41000</span> <span class="sc">~</span> <span class="st">"Oregon"</span>,</span>
+<span id="cb48-49"><a href="#cb48-49" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">42000</span> <span class="sc">~</span> <span class="st">"Pennsylvania"</span>,</span>
+<span id="cb48-50"><a href="#cb48-50" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">44000</span> <span class="sc">~</span> <span class="st">"Rhode Island"</span>,</span>
+<span id="cb48-51"><a href="#cb48-51" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">45000</span> <span class="sc">~</span> <span class="st">"South Carolina"</span>,</span>
+<span id="cb48-52"><a href="#cb48-52" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">46000</span> <span class="sc">~</span> <span class="st">"South Dakota"</span>,</span>
+<span id="cb48-53"><a href="#cb48-53" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">47000</span> <span class="sc">~</span> <span class="st">"Tennessee"</span>,</span>
+<span id="cb48-54"><a href="#cb48-54" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">48000</span> <span class="sc">~</span> <span class="st">"Texas"</span>,</span>
+<span id="cb48-55"><a href="#cb48-55" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">49000</span> <span class="sc">~</span> <span class="st">"Utah"</span>,</span>
+<span id="cb48-56"><a href="#cb48-56" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">50000</span> <span class="sc">~</span> <span class="st">"Vermont"</span>,</span>
+<span id="cb48-57"><a href="#cb48-57" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">51000</span> <span class="sc">~</span> <span class="st">"Virginia"</span>,</span>
+<span id="cb48-58"><a href="#cb48-58" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">53000</span> <span class="sc">~</span> <span class="st">"Washington"</span>,</span>
+<span id="cb48-59"><a href="#cb48-59" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">54000</span> <span class="sc">~</span> <span class="st">"West Virginia"</span>,</span>
+<span id="cb48-60"><a href="#cb48-60" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">55000</span> <span class="sc">~</span> <span class="st">"Wisconsin"</span>,</span>
+<span id="cb48-61"><a href="#cb48-61" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">56000</span> <span class="sc">~</span> <span class="st">"Wyoming"</span>,</span>
+<span id="cb48-62"><a href="#cb48-62" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">72000</span> <span class="sc">~</span> <span class="st">"Puerto Rico"</span>,</span>
+<span id="cb48-63"><a href="#cb48-63" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">78000</span> <span class="sc">~</span> <span class="st">"Virgin Islands"</span>,</span>
+<span id="cb48-64"><a href="#cb48-64" aria-hidden="true" tabindex="-1"></a>    <span class="cn">TRUE</span> <span class="sc">~</span> <span class="cn">NA_character_</span> <span class="co"># Default for unmatched values</span></span>
+<span id="cb48-65"><a href="#cb48-65" aria-hidden="true" tabindex="-1"></a>  ))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>2.6 Call in industry: Leisure and hospitality</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb49"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb49-1"><a href="#cb49-1" aria-hidden="true" tabindex="-1"></a>leisure <span class="ot">&lt;-</span> <span class="fu">list</span>()</span>
+<span id="cb49-2"><a href="#cb49-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb49-3"><a href="#cb49-3" aria-hidden="true" tabindex="-1"></a>years <span class="ot">&lt;-</span> <span class="dv">2014</span><span class="sc">:</span><span class="dv">2023</span></span>
+<span id="cb49-4"><a href="#cb49-4" aria-hidden="true" tabindex="-1"></a>quarters <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"1"</span>, <span class="st">"2"</span>, <span class="st">"3"</span>, <span class="st">"4"</span>)</span>
+<span id="cb49-5"><a href="#cb49-5" aria-hidden="true" tabindex="-1"></a>industry <span class="ot">&lt;-</span> <span class="st">"1026"</span>  </span>
+<span id="cb49-6"><a href="#cb49-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb49-7"><a href="#cb49-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Loop through years and quarters</span></span>
+<span id="cb49-8"><a href="#cb49-8" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (year <span class="cf">in</span> years) {</span>
+<span id="cb49-9"><a href="#cb49-9" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> (qtr <span class="cf">in</span> quarters) {</span>
+<span id="cb49-10"><a href="#cb49-10" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Fetch data for the given year and quarter</span></span>
+<span id="cb49-11"><a href="#cb49-11" aria-hidden="true" tabindex="-1"></a>    data <span class="ot">&lt;-</span> <span class="fu">qcewGetIndustryData</span>(year, qtr, industry)</span>
+<span id="cb49-12"><a href="#cb49-12" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb49-13"><a href="#cb49-13" aria-hidden="true" tabindex="-1"></a>   <span class="co"># Add the year_quarter column</span></span>
+<span id="cb49-14"><a href="#cb49-14" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (<span class="sc">!</span><span class="fu">is.null</span>(data)) {</span>
+<span id="cb49-15"><a href="#cb49-15" aria-hidden="true" tabindex="-1"></a>      year_quarter <span class="ot">&lt;-</span> <span class="fu">paste</span>(year, <span class="st">"Q"</span>, qtr, <span class="at">sep =</span> <span class="st">"_"</span>)  <span class="co"># e.g., "2000_Q1"</span></span>
+<span id="cb49-16"><a href="#cb49-16" aria-hidden="true" tabindex="-1"></a>      data<span class="sc">$</span>year_quarter <span class="ot">&lt;-</span> year_quarter  <span class="co"># Add as a new column</span></span>
+<span id="cb49-17"><a href="#cb49-17" aria-hidden="true" tabindex="-1"></a>      leisure[[year_quarter]] <span class="ot">&lt;-</span> data  <span class="co"># Store in the list</span></span>
+<span id="cb49-18"><a href="#cb49-18" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb49-19"><a href="#cb49-19" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb49-20"><a href="#cb49-20" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb49-21"><a href="#cb49-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb49-22"><a href="#cb49-22" aria-hidden="true" tabindex="-1"></a>leisure <span class="ot">&lt;-</span> <span class="fu">do.call</span>(rbind, leisure)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb50"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb50-1"><a href="#cb50-1" aria-hidden="true" tabindex="-1"></a>leisure <span class="ot">&lt;-</span> leisure <span class="sc">%&gt;%</span></span>
+<span id="cb50-2"><a href="#cb50-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(area_fips, own_code, oty_month3_emplvl_pct_chg, year_quarter)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb51"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb51-1"><a href="#cb51-1" aria-hidden="true" tabindex="-1"></a>area_fips_values <span class="ot">&lt;-</span> <span class="fu">c</span>(</span>
+<span id="cb51-2"><a href="#cb51-2" aria-hidden="true" tabindex="-1"></a>  <span class="dv">01000</span>, <span class="dv">02000</span>, <span class="dv">04000</span>, <span class="dv">05000</span>, <span class="dv">06000</span>, <span class="dv">08000</span>, <span class="dv">09000</span>, <span class="dv">10000</span>, <span class="dv">12000</span>, <span class="dv">13000</span>, </span>
+<span id="cb51-3"><a href="#cb51-3" aria-hidden="true" tabindex="-1"></a>  <span class="dv">15000</span>, <span class="dv">16000</span>, <span class="dv">17000</span>, <span class="dv">18000</span>, <span class="dv">19000</span>, <span class="dv">20000</span>, <span class="dv">21000</span>, <span class="dv">22000</span>, <span class="dv">23000</span>, <span class="dv">24000</span>, </span>
+<span id="cb51-4"><a href="#cb51-4" aria-hidden="true" tabindex="-1"></a>  <span class="dv">25000</span>, <span class="dv">26000</span>, <span class="dv">27000</span>, <span class="dv">28000</span>, <span class="dv">29000</span>, <span class="dv">30000</span>, <span class="dv">31000</span>, <span class="dv">32000</span>, <span class="dv">33000</span>, <span class="dv">34000</span>, </span>
+<span id="cb51-5"><a href="#cb51-5" aria-hidden="true" tabindex="-1"></a>  <span class="dv">35000</span>, <span class="dv">36000</span>, <span class="dv">37000</span>, <span class="dv">38000</span>, <span class="dv">39000</span>, <span class="dv">40000</span>, <span class="dv">41000</span>, <span class="dv">42000</span>, <span class="dv">44000</span>, <span class="dv">45000</span>, </span>
+<span id="cb51-6"><a href="#cb51-6" aria-hidden="true" tabindex="-1"></a>  <span class="dv">46000</span>, <span class="dv">47000</span>, <span class="dv">48000</span>, <span class="dv">49000</span>, <span class="dv">50000</span>, <span class="dv">51000</span>, <span class="dv">53000</span>, <span class="dv">54000</span>, <span class="dv">55000</span>, <span class="dv">56000</span>, </span>
+<span id="cb51-7"><a href="#cb51-7" aria-hidden="true" tabindex="-1"></a>  <span class="dv">72000</span>, <span class="dv">78000</span></span>
+<span id="cb51-8"><a href="#cb51-8" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb51-9"><a href="#cb51-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb51-10"><a href="#cb51-10" aria-hidden="true" tabindex="-1"></a>leisure <span class="ot">&lt;-</span> leisure <span class="sc">%&gt;%</span></span>
+<span id="cb51-11"><a href="#cb51-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(area_fips <span class="sc">%in%</span> area_fips_values, own_code <span class="sc">==</span> <span class="dv">5</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb52"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb52-1"><a href="#cb52-1" aria-hidden="true" tabindex="-1"></a>leisure <span class="ot">&lt;-</span> leisure <span class="sc">%&gt;%</span></span>
+<span id="cb52-2"><a href="#cb52-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(area_fips <span class="sc">%in%</span> <span class="fu">c</span>(</span>
+<span id="cb52-3"><a href="#cb52-3" aria-hidden="true" tabindex="-1"></a>    <span class="dv">01000</span>, <span class="dv">02000</span>, <span class="dv">04000</span>, <span class="dv">05000</span>, <span class="dv">06000</span>, <span class="dv">08000</span>, <span class="dv">09000</span>, <span class="dv">10000</span>, <span class="dv">12000</span>, <span class="dv">13000</span>, </span>
+<span id="cb52-4"><a href="#cb52-4" aria-hidden="true" tabindex="-1"></a>    <span class="dv">15000</span>, <span class="dv">16000</span>, <span class="dv">17000</span>, <span class="dv">18000</span>, <span class="dv">19000</span>, <span class="dv">20000</span>, <span class="dv">21000</span>, <span class="dv">22000</span>, <span class="dv">23000</span>, <span class="dv">24000</span>, </span>
+<span id="cb52-5"><a href="#cb52-5" aria-hidden="true" tabindex="-1"></a>    <span class="dv">25000</span>, <span class="dv">26000</span>, <span class="dv">27000</span>, <span class="dv">28000</span>, <span class="dv">29000</span>, <span class="dv">30000</span>, <span class="dv">31000</span>, <span class="dv">32000</span>, <span class="dv">33000</span>, <span class="dv">34000</span>, </span>
+<span id="cb52-6"><a href="#cb52-6" aria-hidden="true" tabindex="-1"></a>    <span class="dv">35000</span>, <span class="dv">36000</span>, <span class="dv">37000</span>, <span class="dv">38000</span>, <span class="dv">39000</span>, <span class="dv">40000</span>, <span class="dv">41000</span>, <span class="dv">42000</span>, <span class="dv">44000</span>, <span class="dv">45000</span>, </span>
+<span id="cb52-7"><a href="#cb52-7" aria-hidden="true" tabindex="-1"></a>    <span class="dv">46000</span>, <span class="dv">47000</span>, <span class="dv">48000</span>, <span class="dv">49000</span>, <span class="dv">50000</span>, <span class="dv">51000</span>, <span class="dv">53000</span>, <span class="dv">54000</span>, <span class="dv">55000</span>, <span class="dv">56000</span>, </span>
+<span id="cb52-8"><a href="#cb52-8" aria-hidden="true" tabindex="-1"></a>    <span class="dv">72000</span>, <span class="dv">78000</span></span>
+<span id="cb52-9"><a href="#cb52-9" aria-hidden="true" tabindex="-1"></a>  )) <span class="sc">%&gt;%</span></span>
+<span id="cb52-10"><a href="#cb52-10" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb52-11"><a href="#cb52-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">state =</span> <span class="fu">case_when</span>(</span>
+<span id="cb52-12"><a href="#cb52-12" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">01000</span> <span class="sc">~</span> <span class="st">"Alabama"</span>,</span>
+<span id="cb52-13"><a href="#cb52-13" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">02000</span> <span class="sc">~</span> <span class="st">"Alaska"</span>,</span>
+<span id="cb52-14"><a href="#cb52-14" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">04000</span> <span class="sc">~</span> <span class="st">"Arizona"</span>,</span>
+<span id="cb52-15"><a href="#cb52-15" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">05000</span> <span class="sc">~</span> <span class="st">"Arkansas"</span>,</span>
+<span id="cb52-16"><a href="#cb52-16" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">06000</span> <span class="sc">~</span> <span class="st">"California"</span>,</span>
+<span id="cb52-17"><a href="#cb52-17" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">08000</span> <span class="sc">~</span> <span class="st">"Colorado"</span>,</span>
+<span id="cb52-18"><a href="#cb52-18" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">09000</span> <span class="sc">~</span> <span class="st">"Connecticut"</span>,</span>
+<span id="cb52-19"><a href="#cb52-19" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">10000</span> <span class="sc">~</span> <span class="st">"Delaware"</span>,</span>
+<span id="cb52-20"><a href="#cb52-20" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">12000</span> <span class="sc">~</span> <span class="st">"Florida"</span>,</span>
+<span id="cb52-21"><a href="#cb52-21" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">13000</span> <span class="sc">~</span> <span class="st">"Georgia"</span>,</span>
+<span id="cb52-22"><a href="#cb52-22" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">15000</span> <span class="sc">~</span> <span class="st">"Hawaii"</span>,</span>
+<span id="cb52-23"><a href="#cb52-23" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">16000</span> <span class="sc">~</span> <span class="st">"Idaho"</span>,</span>
+<span id="cb52-24"><a href="#cb52-24" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">17000</span> <span class="sc">~</span> <span class="st">"Illinois"</span>,</span>
+<span id="cb52-25"><a href="#cb52-25" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">18000</span> <span class="sc">~</span> <span class="st">"Indiana"</span>,</span>
+<span id="cb52-26"><a href="#cb52-26" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">19000</span> <span class="sc">~</span> <span class="st">"Iowa"</span>,</span>
+<span id="cb52-27"><a href="#cb52-27" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">20000</span> <span class="sc">~</span> <span class="st">"Kansas"</span>,</span>
+<span id="cb52-28"><a href="#cb52-28" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">21000</span> <span class="sc">~</span> <span class="st">"Kentucky"</span>,</span>
+<span id="cb52-29"><a href="#cb52-29" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">22000</span> <span class="sc">~</span> <span class="st">"Louisiana"</span>,</span>
+<span id="cb52-30"><a href="#cb52-30" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">23000</span> <span class="sc">~</span> <span class="st">"Maine"</span>,</span>
+<span id="cb52-31"><a href="#cb52-31" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">24000</span> <span class="sc">~</span> <span class="st">"Maryland"</span>,</span>
+<span id="cb52-32"><a href="#cb52-32" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">25000</span> <span class="sc">~</span> <span class="st">"Massachusetts"</span>,</span>
+<span id="cb52-33"><a href="#cb52-33" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">26000</span> <span class="sc">~</span> <span class="st">"Michigan"</span>,</span>
+<span id="cb52-34"><a href="#cb52-34" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">27000</span> <span class="sc">~</span> <span class="st">"Minnesota"</span>,</span>
+<span id="cb52-35"><a href="#cb52-35" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">28000</span> <span class="sc">~</span> <span class="st">"Mississippi"</span>,</span>
+<span id="cb52-36"><a href="#cb52-36" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">29000</span> <span class="sc">~</span> <span class="st">"Missouri"</span>,</span>
+<span id="cb52-37"><a href="#cb52-37" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">30000</span> <span class="sc">~</span> <span class="st">"Montana"</span>,</span>
+<span id="cb52-38"><a href="#cb52-38" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">31000</span> <span class="sc">~</span> <span class="st">"Nebraska"</span>,</span>
+<span id="cb52-39"><a href="#cb52-39" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">32000</span> <span class="sc">~</span> <span class="st">"Nevada"</span>,</span>
+<span id="cb52-40"><a href="#cb52-40" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">33000</span> <span class="sc">~</span> <span class="st">"New Hampshire"</span>,</span>
+<span id="cb52-41"><a href="#cb52-41" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">34000</span> <span class="sc">~</span> <span class="st">"New Jersey"</span>,</span>
+<span id="cb52-42"><a href="#cb52-42" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">35000</span> <span class="sc">~</span> <span class="st">"New Mexico"</span>,</span>
+<span id="cb52-43"><a href="#cb52-43" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">36000</span> <span class="sc">~</span> <span class="st">"New York"</span>,</span>
+<span id="cb52-44"><a href="#cb52-44" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">37000</span> <span class="sc">~</span> <span class="st">"North Carolina"</span>,</span>
+<span id="cb52-45"><a href="#cb52-45" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">38000</span> <span class="sc">~</span> <span class="st">"North Dakota"</span>,</span>
+<span id="cb52-46"><a href="#cb52-46" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">39000</span> <span class="sc">~</span> <span class="st">"Ohio"</span>,</span>
+<span id="cb52-47"><a href="#cb52-47" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">40000</span> <span class="sc">~</span> <span class="st">"Oklahoma"</span>,</span>
+<span id="cb52-48"><a href="#cb52-48" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">41000</span> <span class="sc">~</span> <span class="st">"Oregon"</span>,</span>
+<span id="cb52-49"><a href="#cb52-49" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">42000</span> <span class="sc">~</span> <span class="st">"Pennsylvania"</span>,</span>
+<span id="cb52-50"><a href="#cb52-50" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">44000</span> <span class="sc">~</span> <span class="st">"Rhode Island"</span>,</span>
+<span id="cb52-51"><a href="#cb52-51" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">45000</span> <span class="sc">~</span> <span class="st">"South Carolina"</span>,</span>
+<span id="cb52-52"><a href="#cb52-52" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">46000</span> <span class="sc">~</span> <span class="st">"South Dakota"</span>,</span>
+<span id="cb52-53"><a href="#cb52-53" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">47000</span> <span class="sc">~</span> <span class="st">"Tennessee"</span>,</span>
+<span id="cb52-54"><a href="#cb52-54" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">48000</span> <span class="sc">~</span> <span class="st">"Texas"</span>,</span>
+<span id="cb52-55"><a href="#cb52-55" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">49000</span> <span class="sc">~</span> <span class="st">"Utah"</span>,</span>
+<span id="cb52-56"><a href="#cb52-56" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">50000</span> <span class="sc">~</span> <span class="st">"Vermont"</span>,</span>
+<span id="cb52-57"><a href="#cb52-57" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">51000</span> <span class="sc">~</span> <span class="st">"Virginia"</span>,</span>
+<span id="cb52-58"><a href="#cb52-58" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">53000</span> <span class="sc">~</span> <span class="st">"Washington"</span>,</span>
+<span id="cb52-59"><a href="#cb52-59" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">54000</span> <span class="sc">~</span> <span class="st">"West Virginia"</span>,</span>
+<span id="cb52-60"><a href="#cb52-60" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">55000</span> <span class="sc">~</span> <span class="st">"Wisconsin"</span>,</span>
+<span id="cb52-61"><a href="#cb52-61" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">56000</span> <span class="sc">~</span> <span class="st">"Wyoming"</span>,</span>
+<span id="cb52-62"><a href="#cb52-62" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">72000</span> <span class="sc">~</span> <span class="st">"Puerto Rico"</span>,</span>
+<span id="cb52-63"><a href="#cb52-63" aria-hidden="true" tabindex="-1"></a>    area_fips <span class="sc">==</span> <span class="dv">78000</span> <span class="sc">~</span> <span class="st">"Virgin Islands"</span>,</span>
+<span id="cb52-64"><a href="#cb52-64" aria-hidden="true" tabindex="-1"></a>    <span class="cn">TRUE</span> <span class="sc">~</span> <span class="cn">NA_character_</span> <span class="co"># Default for unmatched values</span></span>
+<span id="cb52-65"><a href="#cb52-65" aria-hidden="true" tabindex="-1"></a>  ))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const onCopySuccess = function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  }
+  const getTextToCopy = function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+    text: getTextToCopy
+  });
+  clipboard.on('success', onCopySuccess);
+  if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+    // For code content inside modals, clipBoardJS needs to be initialized with a container option
+    // TODO: Check when it could be a function (https://github.com/zenorocha/clipboard.js/issues/860)
+    const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+      text: getTextToCopy,
+      container: window.document.getElementById('quarto-embedded-source-code-modal')
+    });
+    clipboardModal.on('success', onCopySuccess);
+  }
+    var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+    var mailtoRegex = new RegExp(/^mailto:/);
+      var filterRegex = new RegExp('/' + window.location.host + '/');
+    var isInternal = (href) => {
+        return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+    }
+    // Inspect non-navigation links and adorn them if external
+ 	var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+    for (var i=0; i<links.length; i++) {
+      const link = links[i];
+      if (!isInternal(link.href)) {
+        // undo the damage that might have been done by quarto-nav.js in the case of
+        // links that we want to consider external
+        if (link.dataset.originalHref !== undefined) {
+          link.href = link.dataset.originalHref;
+        }
+      }
+    }
+  function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+    const config = {
+      allowHTML: true,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start',
+    };
+    if (contentFn) {
+      config.content = contentFn;
+    }
+    if (onTriggerFn) {
+      config.onTrigger = onTriggerFn;
+    }
+    if (onUntriggerFn) {
+      config.onUntrigger = onUntriggerFn;
+    }
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      if (note) {
+        return note.innerHTML;
+      } else {
+        return "";
+      }
+    });
+  }
+  const xrefs = window.document.querySelectorAll('a.quarto-xref');
+  const processXRef = (id, note) => {
+    // Strip column container classes
+    const stripColumnClz = (el) => {
+      el.classList.remove("page-full", "page-columns");
+      if (el.children) {
+        for (const child of el.children) {
+          stripColumnClz(child);
+        }
+      }
+    }
+    stripColumnClz(note)
+    if (id === null || id.startsWith('sec-')) {
+      // Special case sections, only their first couple elements
+      const container = document.createElement("div");
+      if (note.children && note.children.length > 2) {
+        container.appendChild(note.children[0].cloneNode(true));
+        for (let i = 1; i < note.children.length; i++) {
+          const child = note.children[i];
+          if (child.tagName === "P" && child.innerText === "") {
+            continue;
+          } else {
+            container.appendChild(child.cloneNode(true));
+            break;
+          }
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(container);
+        }
+        return container.innerHTML
+      } else {
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        return note.innerHTML;
+      }
+    } else {
+      // Remove any anchor links if they are present
+      const anchorLink = note.querySelector('a.anchorjs-link');
+      if (anchorLink) {
+        anchorLink.remove();
+      }
+      if (window.Quarto?.typesetMath) {
+        window.Quarto.typesetMath(note);
+      }
+      // TODO in 1.5, we should make sure this works without a callout special case
+      if (note.classList.contains("callout")) {
+        return note.outerHTML;
+      } else {
+        return note.innerHTML;
+      }
+    }
+  }
+  for (var i=0; i<xrefs.length; i++) {
+    const xref = xrefs[i];
+    tippyHover(xref, undefined, function(instance) {
+      instance.disable();
+      let url = xref.getAttribute('href');
+      let hash = undefined; 
+      if (url.startsWith('#')) {
+        hash = url;
+      } else {
+        try { hash = new URL(url).hash; } catch {}
+      }
+      if (hash) {
+        const id = hash.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note !== null) {
+          try {
+            const html = processXRef(id, note.cloneNode(true));
+            instance.setContent(html);
+          } finally {
+            instance.enable();
+            instance.show();
+          }
+        } else {
+          // See if we can fetch this
+          fetch(url.split('#')[0])
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.getElementById(id);
+            if (note !== null) {
+              const html = processXRef(id, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      } else {
+        // See if we can fetch a full url (with no hash to target)
+        // This is a special case and we should probably do some content thinning / targeting
+        fetch(url)
+        .then(res => res.text())
+        .then(html => {
+          const parser = new DOMParser();
+          const htmlDoc = parser.parseFromString(html, "text/html");
+          const note = htmlDoc.querySelector('main.content');
+          if (note !== null) {
+            // This should only happen for chapter cross references
+            // (since there is no id in the URL)
+            // remove the first header
+            if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+              note.children[0].remove();
+            }
+            const html = processXRef(null, note);
+            instance.setContent(html);
+          } 
+        }).finally(() => {
+          instance.enable();
+          instance.show();
+        });
+      }
+    }, function(instance) {
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            div.style.left = 0;
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+        // Handle positioning of the toggle
+    window.addEventListener(
+      "resize",
+      throttle(() => {
+        elRect = undefined;
+        if (selectedAnnoteEl) {
+          selectCodeLines(selectedAnnoteEl);
+        }
+      }, 10)
+    );
+    function throttle(fn, ms) {
+    let throttle = false;
+    let timer;
+      return (...args) => {
+        if(!throttle) { // first call gets through
+            fn.apply(this, args);
+            throttle = true;
+        } else { // all the others get throttled
+            if(timer) clearTimeout(timer); // cancel #2
+            timer = setTimeout(() => {
+              fn.apply(this, args);
+              timer = throttle = false;
+            }, ms);
+        }
+      };
+    }
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>

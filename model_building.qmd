@@ -15,7 +15,7 @@ library(lmtest)
 
 knitr::opts_chunk$set(echo = TRUE)
 
-# setwd("C:/Users/nhidi/OneDrive - Johns Hopkins/PhD/courses/second-term/Programming/final-project/data")
+setwd("C:/Users/nhidi/OneDrive - Johns Hopkins/PhD/courses/second-term/Programming/final-project/data")
 p1_wide <- readxl::read_excel("service_occupation_race.xlsx")
 ```
 
@@ -49,7 +49,7 @@ plot1 <- p1_long %>%
   geom_point()  +
   labs(color = "Race", linetype = "Sex") +  # Add legend labels
   theme_bw() +
-  ylab("Mean quarterly income") +
+  ylab("Mean Weekly income") +
   xlab("Year") 
 plot1
 ```
@@ -76,7 +76,7 @@ train_index <- createDataPartition(p1_long$value, p = 0.8, list = FALSE)
 train_data <- p1_long[train_index, ]
 test_data <- p1_long[-train_index, ]
 
-#Machine learning model: Linear regression model to predict mean quarterly income 
+#Machine learning model: Linear regression model to predict a country's GINI inedex 
 # Define the training control (10-fold cross-validation)
 train_control <- trainControl(method = "cv", number = 10)
 #Train the model using caret or tiny models
@@ -141,6 +141,7 @@ print(future_data)
 ## Part 1b: Only include gender data in the model
 
 ```{r}
+setwd("C:/Users/nhidi/OneDrive - Johns Hopkins/PhD/courses/second-term/Programming/final-project/data")
 p1b_wide <- readxl::read_excel("service_occupation_annual.xlsx")
 ```
 
@@ -171,7 +172,7 @@ plot2 <- p1b_long %>%
   geom_point()  +
   labs(linetype = "Sex") +  # Add legend labels
   theme_bw() +
-  ylab("Mean quarterly income") +
+  ylab("Mean weekly income") +
   xlab("Year") 
 plot2
 ```
@@ -250,7 +251,6 @@ future_data_b$predicted_value <- predict(lm_model_b, newdata = future_data_b)
 
 # View predictions
 print(future_data_b)
-# save(future_data_b, file = "future_data_b.RData")
 ```
 
 # Part 2: Education Industry
@@ -262,7 +262,7 @@ By industry, 12 month percentage employment, region
 Ø Variables / Predictors (X) : year, state
 
 ```{r}
-# setwd("C:/Users/nhidi/OneDrive - Johns Hopkins/PhD/courses/second-term/Programming/final-project/data")
+setwd("C:/Users/nhidi/OneDrive - Johns Hopkins/PhD/courses/second-term/Programming/final-project/data")
 p1_education <- readxl::read_excel("education.xlsx")
 
 str(p1_education$year_quarter)
@@ -307,7 +307,7 @@ plot3 <- p1_education %>%
   ylab("% Job change") +
   xlab("Year")  +
   theme(legend.position = "none") +
-   scale_x_discrete(guide = guide_axis(angle = 90)) #
+  scale_x_discrete(guide = guide_axis(angle = 90)) #
 plot3
 ```
 
@@ -547,7 +547,7 @@ process_and_model <- function(dataset_path, sheet_name, target_variable, predict
 ```{r}
 
 finance_results <- process_and_model(
-  dataset_path = "finance.xlsx",
+  dataset_path = "C:/Users/nhidi/OneDrive - Johns Hopkins/PhD/courses/second-term/Programming/final-project/data/finance.xlsx",
   sheet_name = NULL,  # Specify sheet name if applicable
   target_variable = "oty_month3_emplvl_pct_chg",
   predictors = c("year_quarter_cont", "state")
@@ -564,7 +564,7 @@ Part 2: Information Industry
 ```{r}
 # 
 information_results <- process_and_model(
-  dataset_path = "information.xlsx",
+  dataset_path = "C:/Users/nhidi/OneDrive - Johns Hopkins/PhD/courses/second-term/Programming/final-project/data/information.xlsx",
   sheet_name = NULL,  # Specify sheet name if applicable
   target_variable = "oty_month3_emplvl_pct_chg",
   predictors = c("year_quarter_cont", "state")
@@ -581,7 +581,7 @@ future_data_information <- future_data_information %>%
 ```{r}
 # 
 leisure_results <- process_and_model(
-  dataset_path = "leisure.xlsx",
+  dataset_path = "C:/Users/nhidi/OneDrive - Johns Hopkins/PhD/courses/second-term/Programming/final-project/data/leisure.xlsx",
   sheet_name = NULL,  # Specify sheet name if applicable
   target_variable = "oty_month3_emplvl_pct_chg",
   predictors = c("year_quarter_cont", "state")
@@ -598,7 +598,7 @@ future_data_leisure <- future_data_leisure %>%
 
 ```{r}
 professional_results <- process_and_model(
-  dataset_path = "professional.xlsx",
+  dataset_path = "C:/Users/nhidi/OneDrive - Johns Hopkins/PhD/courses/second-term/Programming/final-project/data/professional.xlsx",
   sheet_name = NULL,  # Specify sheet name if applicable
   target_variable = "oty_month3_emplvl_pct_chg",
   predictors = c("year_quarter_cont", "state")
@@ -609,71 +609,4 @@ future_data_professional <- professional_results$future_data
 future_data_professional <- future_data_professional %>%
   distinct()
 
-```
-
-```{r}
-# combine future data for all industries for creating an interactive map in the dashboard
-# Add a new column named 'industry' with the value 'finance' for all rows
-future_data_finance$industry <- "finance"
-# Add an industry column with "information" for future_data_information
-future_data_information$industry <- "information"
-
-# Add an industry column with "leisure" for future_data_leisure
-future_data_leisure$industry <- "leisure"
-
-# Add an industry column with "education" for future_data_education
-future_data_part2_education$industry <- "education"
-
-# Add an industry column with "professional" for future_data_professional
-future_data_professional$industry <- "professional"
-
-# Combine all data frames into one
-future_data_combined <- rbind(
-  future_data_finance,
-  future_data_information,
-  future_data_leisure,
-  future_data_part2_education,
-  future_data_professional
-)
-# Save the combined data frame as an .RData file
-# save(future_data_combined, file = "future_data_combined.RData")
-```
-```{r}
-# Function to analyze and visualize the distribution of predicted_value (predicted % change in employment) to determine width of bins 
-analyze_distribution <- function(data, column_name = "predicted_value") {
-  library(ggplot2)
-  
-  # Check if the column exists
-  if (!column_name %in% colnames(data)) {
-    stop(paste("Column", column_name, "does not exist in the dataframe."))
-  }
-  
-  # Extract the column
-  values <- data[[column_name]]
-  
-  # Calculate summary statistics
-  summary_stats <- summary(values)
-  print("Summary Statistics:")
-  print(summary_stats)
-  
-  # Plot the distribution
-  ggplot(data, aes_string(x = column_name)) +
-    geom_histogram(binwidth = 1, fill = "blue", color = "white", alpha = 0.7) +
-    theme_minimal() +
-    labs(
-      title = "Distribution of Predicted Values",
-      x = "Predicted Value",
-      y = "Frequency"
-    )
-  
-  # Suggest potential bins based on quantiles
-  quantiles <- quantile(values, probs = seq(0, 1, 0.1))  # Deciles
-  print("Quantiles (Deciles):")
-  print(quantiles)
-  
-  return(list(summary_stats = summary_stats, quantiles = quantiles))
-}
-
-# Use the function on future_data_combined
-distribution_info <- analyze_distribution(future_data_combined, "predicted_value")
 ```

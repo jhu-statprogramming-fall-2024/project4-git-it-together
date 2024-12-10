@@ -6,7 +6,7 @@ library(sf)
 library(RColorBrewer)
 
 # Load your precomputed data
-load("future_data_b.RData")        # Data for income prediction
+load("future_data.RData")        # Data for income prediction
 load("future_data_combined.RData") # Combined data for industries
 
 # Load the US state shapefile
@@ -22,17 +22,18 @@ us_states <- st_make_valid(us_states)
 ui <- navbarPage(
   title = "Income Prediction Dashboard",
   
-  # Page 1: Mean Quarterly Income
+  # Page 1: Average Weekly Income
   tabPanel(
-    "Mean Quarterly Income",
+    "Predicted Average Weekly Income",
     sidebarLayout(
       sidebarPanel(
-        selectInput("year", "Select Year:", choices = unique(future_data_b$year)),
-        selectInput("sex", "Select Sex:", choices = unique(future_data_b$sex)),
+        selectInput("year", "Select Year:", choices = unique(future_data$year)),
+        selectInput("sex", "Select Sex:", choices = unique(future_data$sex)),
+        selectInput("race", "Select Race:", choices = unique(future_data$race)),
         actionButton("filter", "Get Predicted Income")
       ),
       mainPanel(
-        h3("Predicted Mean Quarterly Income"),
+        h3("Predicted Average Weekly Income"),
         verbatimTextOutput("prediction")
       )
     )
@@ -63,13 +64,13 @@ server <- function(input, output, session) {
     req(input$year, input$sex)
     
     # Filter the precomputed data
-    filtered_data <- future_data_b %>%
+    filtered_data <- future_data %>%
       filter(year == as.numeric(input$year), sex == input$sex)
     
     # Display the result
     output$prediction <- renderText({
       if (nrow(filtered_data) > 0 && is.numeric(filtered_data$predicted_value)) {
-        paste("Predicted mean quarterly income:", round(mean(filtered_data$predicted_value), 2))
+        paste("Predicted average weekly income is", "$", round(mean(filtered_data$predicted_value), 2))
       } else {
         "No data available for the selected inputs."
       }
@@ -93,7 +94,7 @@ server <- function(input, output, session) {
     
     # Define a custom palette with hex color codes
     palette <- colorBin(
-      palette = c("#08306B", "#2171B5", "#6BAED6", "#FD8D3C", "#FC4E2A", "#E31A1C", "#BD0026", "#800026"),
+      palette = c("#800026","#BD0026","#E31A1C", "#FC4E2A", "#FD8D3C","#6BAED6", "#2171B5","#08306B"),
       domain = map_data$predicted_value,
       bins = bins
     )

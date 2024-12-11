@@ -20,7 +20,7 @@ us_states <- st_make_valid(us_states)
 
 # Define UI
 ui <- navbarPage(
-  title = "Income Prediction Dashboard",
+  title = "Income And Employment Prediction Dashboard",
   
   # Page 1: Average Weekly Income
   tabPanel(

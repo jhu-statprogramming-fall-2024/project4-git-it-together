@@ -3,10 +3,10 @@ library(shiny)
 library(leaflet)
 library(dplyr)
 library(sf)
-library(RColorBrewer)
 
 # Load your precomputed data
-load("future_data.RData")        # Data for income prediction
+load("future_data_b.RData") # year and sex
+load("future_data.RData")   # year, sex, and race
 load("future_data_combined.RData") # Combined data for industries
 
 # Load the US state shapefile
@@ -20,21 +20,35 @@ us_states <- st_make_valid(us_states)
 
 # Define UI
 ui <- navbarPage(
-  title = "Income And Employment Prediction Dashboard",
+  title = "Income and Employment Prediction Dashboard",
   
   # Page 1: Average Weekly Income
   tabPanel(
     "Predicted Average Weekly Income",
     sidebarLayout(
       sidebarPanel(
-        selectInput("year", "Select Year:", choices = unique(future_data$year)),
-        selectInput("sex", "Select Sex:", choices = unique(future_data$sex)),
-        selectInput("race", "Select Race:", choices = unique(future_data$race)),
-        actionButton("filter", "Get Predicted Income")
+        tabsetPanel(
+          id = "model_selection",
+          tabPanel(
+            "Model 1",
+            selectInput("year", "Select Year:", choices = unique(future_data_b$year)),
+            selectInput("sex", "Select Sex:", choices = unique(future_data_b$sex)),
+            actionButton("filter", "Get Predicted Income")
+          ),
+          tabPanel(
+            "Model 2",
+            selectInput("year_2", "Select Year:", choices = unique(future_data$year)),
+            selectInput("sex_2", "Select Sex:", choices = unique(future_data$sex)),
+            selectInput("race_2", "Select Race:", choices = unique(future_data$race)),
+            actionButton("filter_2", "Get Predicted Income")
+          )
+        )
       ),
       mainPanel(
         h3("Predicted Average Weekly Income"),
-        verbatimTextOutput("prediction")
+        verbatimTextOutput("prediction_combined"),
+        div(style = "color: gray; font-size: 12px; margin-top: 15px;",
+            "Note: These models are based on population-level data from the U.S. Bureau of Labor Statistics.")
       )
     )
   ),
@@ -50,7 +64,9 @@ ui <- navbarPage(
       ),
       mainPanel(
         h3("12 Month Percent Change in Employment"),
-        leafletOutput("map", height = "600px")
+        leafletOutput("map", height = "600px"),
+        div(style = "color: gray; font-size: 12px; margin-top: 15px;",
+            "Note: This map is based on population-level data from the U.S. Bureau of Labor Statistics.")
       )
     )
   )
@@ -59,20 +75,38 @@ ui <- navbarPage(
 # Define Server
 server <- function(input, output, session) {
   
-  # Income Prediction Logic
+  # Income Prediction Logic for Model 1
   observeEvent(input$filter, {
     req(input$year, input$sex)
     
     # Filter the precomputed data
-    filtered_data <- future_data %>%
+    filtered_data <- future_data_b %>%
       filter(year == as.numeric(input$year), sex == input$sex)
     
     # Display the result
-    output$prediction <- renderText({
+    output$prediction_combined <- renderText({
       if (nrow(filtered_data) > 0 && is.numeric(filtered_data$predicted_value)) {
-        paste("Predicted average weekly income is", "$", round(mean(filtered_data$predicted_value), 2))
+        paste("Model 1 - Predicted average weekly income is", "$", round(mean(filtered_data$predicted_value), 2))
       } else {
-        "No data available for the selected inputs."
+        "Model 1 - No data available for the selected inputs."
+      }
+    })
+  })
+  
+  # Income Prediction Logic for Model 2
+  observeEvent(input$filter_2, {
+    req(input$year_2, input$sex_2, input$race_2)
+    
+    # Filter the precomputed data
+    filtered_data_2 <- future_data %>%
+      filter(year == as.numeric(input$year_2), sex == input$sex_2, race == input$race_2)
+    
+    # Display the result
+    output$prediction_combined <- renderText({
+      if (nrow(filtered_data_2) > 0 && is.numeric(filtered_data_2$predicted_value)) {
+        paste("Model 2 - Predicted average weekly income is", "$", round(mean(filtered_data_2$predicted_value), 2))
+      } else {
+        "Model 2 - No data available for the selected inputs."
       }
     })
   })
@@ -94,7 +128,7 @@ server <- function(input, output, session) {
     
     # Define a custom palette with hex color codes
     palette <- colorBin(
-      palette = c("#800026","#BD0026","#E31A1C", "#FC4E2A", "#FD8D3C","#6BAED6", "#2171B5","#08306B"),
+      palette = c("#800026", "#BD0026", "#E6F5FF", "#B3DDF2", "#73B3D8", "#3A88C5", "#1764A9", "#08306B"),
       domain = map_data$predicted_value,
       bins = bins
     )
@@ -104,13 +138,13 @@ server <- function(input, output, session) {
       leaflet(map_data) %>%
         addTiles() %>%
         addPolygons(
-          fillColor = ~palette(predicted_value),  # Replace 'predicted_value' with your data column
+          fillColor = ~palette(predicted_value),
           color = "white",
           weight = 2,
           opacity = 1,
           fillOpacity = 0.7,
           highlight = highlightOptions(weight = 3, color = "#666", bringToFront = TRUE),
-          label = ~paste(name, ": ", predicted_value),  # Replace 'name' and 'predicted_value' with your columns
+          label = ~paste(name, ": ", predicted_value),
           labelOptions = labelOptions(direction = "auto")
         ) %>%
         addLegend(

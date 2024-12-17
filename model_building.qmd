@@ -610,3 +610,39 @@ future_data_professional <- future_data_professional %>%
   distinct()
 
 ```
+
+Export data
+
+```{r}
+# Combine future data for all industries for creating an interactive map in the dashboard
+# Add a new column named 'industry' with the value 'finance' for all rows
+future_data_finance$industry <- "finance"
+
+# Add an industry column with "information" for future_data_information
+future_data_information$industry <- "information"
+
+# Add an industry column with "leisure" for future_data_leisure
+future_data_leisure$industry <- "leisure"
+
+# Add an industry column with "education" for future_data_education
+future_data_part2_education$industry <- "education"
+
+# Add an industry column with "professional" for future_data_professional
+future_data_professional$industry <- "professional"
+
+# Combine all data frames into one
+future_data_combined <- rbind(
+  future_data_finance,
+  future_data_information,
+  future_data_leisure,
+  future_data_part2_education,
+  future_data_professional
+)
+# Save the combined data frame as an .RData file
+save(future_data_combined, file = "future_data_combined.RData")
+
+# Save data for model 1: year and sex
+save(future_data_b, file = "future_data_b.RData")
+# Save data for model 2: year, sex, and race
+save(future_data, file = "future_data.RData")
+```

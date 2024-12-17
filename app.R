@@ -4,7 +4,7 @@ library(leaflet)
 library(dplyr)
 library(sf)
 
-# Load your precomputed data
+# Load data from model_building.qmd
 load("future_data_b.RData") # year and sex
 load("future_data.RData")   # year, sex, and race
 load("future_data_combined.RData") # Combined data for industries
@@ -48,7 +48,7 @@ ui <- navbarPage(
         h3("Predicted Average Weekly Income"),
         verbatimTextOutput("prediction_combined"),
         div(style = "color: gray; font-size: 12px; margin-top: 15px;",
-            "Note: These models are based on population-level data from the U.S. Bureau of Labor Statistics.")
+            "Note: These models are for informational purposes only and are based on population-level data from the U.S. Bureau of Labor Statistics.")
       )
     )
   ),
@@ -66,7 +66,7 @@ ui <- navbarPage(
         h3("12 Month Percent Change in Employment"),
         leafletOutput("map", height = "600px"),
         div(style = "color: gray; font-size: 12px; margin-top: 15px;",
-            "Note: This map is based on population-level data from the U.S. Bureau of Labor Statistics.")
+            "Note: This map is for informational purposes only and is based on population-level data from the U.S. Bureau of Labor Statistics.")
       )
     )
   )
@@ -79,7 +79,7 @@ server <- function(input, output, session) {
   observeEvent(input$filter, {
     req(input$year, input$sex)
     
-    # Filter the precomputed data
+    # Filter the data
     filtered_data <- future_data_b %>%
       filter(year == as.numeric(input$year), sex == input$sex)
     
@@ -97,7 +97,7 @@ server <- function(input, output, session) {
   observeEvent(input$filter_2, {
     req(input$year_2, input$sex_2, input$race_2)
     
-    # Filter the precomputed data
+    # Filter the data
     filtered_data_2 <- future_data %>%
       filter(year == as.numeric(input$year_2), sex == input$sex_2, race == input$race_2)
     

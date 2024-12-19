@@ -1,4 +1,5 @@
 Team: Git It Together
+
 Members: Amanda Kim (akim148), Da Yea Song (dsong13), Nhi Dinh (nhidinh), Xingtong Li (xli355) 
 Project: Predicting Income for Service Occupations and Employment Changes Across States​
 

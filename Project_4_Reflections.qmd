@@ -1,0 +1,222 @@
+---
+title: "Project 4 Reflections"
+format: html
+editor: visual
+---
+
+## Reflections
+
+As graduate students, we are navigating a rapidly evolving job market where knowledge of workforce trends and income potential is essential for making informed career decisions. The transition from academia to professional life requires not only technical expertise but also an understanding of the broader economic forces that shape employment opportunities. Our project focuses on predicting income levels and employment changes in service-related occupations across U.S. states using real-world data from the U.S. Bureau of Labor Statistics (BLS). This work highlights the importance of leveraging data-driven insights to anticipate job market dynamics---an invaluable skill for graduate students preparing to enter or influence the workforce. By understanding these patterns, we can better align our career paths with emerging opportunities and challenges in today\'s economy. 
+
+ 
+
+**What is currently known about this topic?** 
+
+The BLS developed industry and occupational employment projections. An input-output (I-O) model estimates an industry-level employment needed for a specific GDP level (U.S. Bureau of Labor Statistics, 2024). The Bureau also uses a National Employment Matrix to detail employment by occupation, across various salary positions, working classes, and industries (U.S. Bureau of Labor Statistics, 2024). In addition to population-level predictions, machine learning has been applied to predict individual career outcomes. For instance, Ohio University's career coaching services use student success analytics software powered by machine learning to predict students' likelihood of graduating without job offers and initiate timely interventions (Hugo, 2019). However, based on our research, we have not been able to find a model that takes into consideration an individual\'s specific measurements (degree, industry, geographic location, sociodemographic variables such as age, sex, etc) to generate an estimated percentage/likelihood of finding a job/position. We create an interactive dashboard for users to manually enter their specific criteria, characteristics, and measurements to receive a predicted likelihood of finding a job in a specific geographic location and industry/field.  
+
+1.  **Sex & Race:** Sex and race significantly influence employment outcomes, with research showing that women and racial minorities often face systemic barriers in the labor market. Women, particularly women of color, experience lower employment rates and wage disparities compared to their male and white counterparts, attributed to factors like occupational segregation, discrimination, and caregiving responsibilities (Goldin, 2014; Blau & Kahn, 2017). 
+
+```{=html}
+<!-- -->
+```
+2.  **Age & Marriage Status:** Among women, participation in education is (bachelor\'s and higher) is associated with increased employment, decreased in marred status, later occurrence of marriage, increase age of childbearing, and decreased fertility rates (Esencan, 2021).  
+
+```{=html}
+<!-- -->
+```
+3.  **Geographic location & Country of Birth (Binary: US/Not):** Employment statistics from 58 countries indicate that rural residents are 5% more likely to be employed compared to their urban counterparts (Ananian & Dellaferrera, 2024). Furthermore, people living near thriving job markets are morelikely to be employed compared to those farther away (Muraca, 2014). In 2023, the unemployment rate for native-born populations remained relatively stable at 3.6%, which is below the pre-pandemic level of 3.8% (U.S. Bureau of Labor Statistics, 2024). However, the unemployment rate for foreign-born individuals in the U.S. increased slightly from 3.4% in 2022 to 3.6% in 2023, staying above the pre-pandemic rate of 3.1% recorded in 2019 (U.S. Bureau of Labor Statistics, 2024). 
+
+```{=html}
+<!-- -->
+```
+4.  **Education & Industry:** Those with degrees that align closely with their industry (e.g., engineering degree holders in engineering roles) typically have stronger employment prospects and lower chances of job displacement. Misalignment between education and industry can lead to underemployment or the need for additional certifications or skills development (Bonnie, 2015). In addition, employment is typically robust for individuals with advanced degrees in specialized fields, particularly in sectors with significant knowledge and skill demands, such as medical, engineering, and scientific research fields (Horowitz, 2018). 
+
+**Research Question:** 
+
+Our original project proposal was to utilize data from the U.S. Bureau of Labor Statistics to see if we can predict an individual\'s employment probability in the United States using their personal and professional characteristics: race, gender, age, industry of interest, geographic location, education attainment, and citizenship status. The project goal was to produce a web-based prediction tool where individuals can input their information and get a customized probability score. However, the BLS data was entirely population-based and the data sets provided were fragmented, meaning that the data sets looking at variables such as income level by sex and year were not mergeable with the data sets looking at employment rates across various service industries based on sex. This made it difficult for our group to combine any BLS datasets, so our group decided to take another route. We decided to narrow our list of characteristics to sex, race, "year of interest," and geographic location by state and then focus on one specific industry. We decided on the service industry because of the sheer size and level of coverage across various sectors such as hospitality, retail, education, finance, and more. Additionally, service-related occupations often face income and employment stability disparities, largely depending on the seasons and trends. Our new project objective was to leverage BLS data to create a predictive model for income levels and employment changes across states for service-related occupations. By identifying patterns and trends, we aim to provide actionable insights that can inform job seekers. 
+
+ 
+
+**Variables/Data Exploration:** 
+
+To answer our research question, we separated our project into 2 parts. In part 1, we wanted to look at income for service-related occupations. To do this, we used the Current Employment Statistics (CES) dataset via the blsAPI. Using the data dictionary, we identified the variables and codes. We set our outcome variable as \"average weekly income,\" and we used sex and race as our predictor variables. We also decided to create another model that used sex as the only predictor variable, so that users can see how much their individual race impacts the predicted income. The data was retrieved in 10-year intervals, based on the restrictions placed by the BLS website.  
+
+For part 2, we looked at employment percentage changes across U.S. states by service-related occupations. For this part of our project, our goal was to predict which states would experience an increase and which states would experience a decrease in job openings/availabilities for specific service-related occupations. We used the \"Quarterly Census of Employment and Wages\" dataset. We selected employment percen change as the outcome variable, with year and U.S. state as the predictor variables. We decided to focus on these 5 service-related occupation categories, as defined by the BLS: Information, Education and Health, Professional and Business Services, Financial Activities, and Leisure and Hospitality. The data was retrieved using a \"for loop\" for each occupation category.  
+
+ 
+
+**Prediction Model:** 
+
+For our project, we aimed to integrate functional programming with machine learning to create a dashboard that individuals can use as an informative tool in understanding service-related occupations. For each model (2 models in part 1 and 1 model in part 2), we followed the general work-flow of first visualizing data to assess any patterns between the outcome and predictors, then fitting a linear regression model, then using the Caret package to train 80% of the dataset then test 20% of the datasets, then using this machine learning model to predict the outcome up to 2050.  
+
+In part 1, we included two models since the data only had three races, which did not reflect the diversity of the U.S. population. To address this limitation, we added a second model that is more general and only included sex. In part 1, there is a clear linear relation between sex, race, and the income. Men made significantly more than women, and the outcome also varied significantly by race. Because of this clear linear relation, the machine learning models performed very well, with RMSE at 0.88 for model with sex only and RMSE at 0.95 for model with sex + race.  
+
+![](images/Screenshot 2024-12-19 at 7.35.52 PM.png)\
+
+In part 2, the machine learning model did not perform as well, since there was a dip in the job market in 2020 (most likely due to the COVID-19 pandemic). The linear regression model was not a good model to represent this data. In the future, we would explore other statistical models, perhaps adding spline terms, to better capture the complex patterns of the job market in the last 2 decades.  
+
+**Dashboard Creation:**  
+
+Our final product is a Shiny dashboard. The UI and server logic were defined using functions from the Shiny package. We included a note to clarify that the predicted income and employment map are for informational purposes only, based on population-level data from the U.S. Bureau of Labor Statistics.  
+
+The dashboard provides two key features:  
+
+1.  Weekly income prediction   
+
+The first page of the dashboard features two income prediction models. For Model 1, users can select the year and sex to view the predicted income. Model 2 allows users to include an additional variable, race. The dashboard dynamically filters the prediction data based on user input using functions from the dplyr package and displays the results.  
+
+2.  Employment change map  
+
+To visualize the percent change in employment, we used the leaflet package to create a color-coded interactive map with hover effects. Users can select the time period and industry to view the employment changes across different states. States with decreased employment opportunities are highlighted in red, while those with increased opportunities appear in blue. States with missing data are shown in grey. When the user hovers over a state, it is highlighted with a black border, and a label appears showing the data. The state boundaries for the map were defined using shapefiles, which were imported using the simple features package.  
+
+The integration of data, user input, prediction results, and map visualization is seamless. The dashboard uses the latest data from the U.S. Bureau of Labor Statistics, which is dynamically updated and filtered based on user input. The shapefile for U.S. states is joined with the filtered data to display corresponding values in the map. A customized color palette and the number of bins determined by the data distribution effectively highlight increases and decreases in employment opportunities, making patterns easy for users to interpret.  
+
+The dashboard is user-friendly. Users can quickly select the year, sex, race, and industry through dropdown menus to retrieve predicted income or view the employment map with a single button click. The predicted results are presented with a concise description. The color-coded map, complete with a legend and hover effects, is easy to interpret. Furthermore, the underlying R script for our dashboard is well-documented. We included code comments explaining each step. We also used a logical structure that separates data loading, UI design, and server logic. This clear organization makes the codes easy to understand, interpret, and extend.    
+
+While building the dashboard, a major challenge was joining prediction data with state shapefiles. Initially, we used an us-states.json from PublicaMundi MappingAPI in Github but encountered errors related to data incompatibility and invalid value ranges. To troubleshoot, we verified the file's coordinate reference system (CRS) to ensure it was WGS84 (EPSG:4326), required by the leaflet package. We also inspected coordinate ranges, validated the geometries, manually specified color codes, and adjusted the range and number of bins. However, the issues persisted. Ultimately, we switched to a new data source, Natural Earth Data, to download state-level shapefiles. Through this process, we gained experience in processing geospatial data, learned more about potential sources of error, and became more flexible in problem solving.  
+
+ 
+
+**References for Current Knowledge:** 
+
+Ananian, S., & Dellaferrera, G. (2024). Employment and wage disparities between rural and urban areas. ILO. <https://doi.org/10.54394/LNZT9066> 
+
+Blau, F. D., & Kahn, L. M. (2017). "The Gender Wage Gap: Extent, Trends, and Explanations." Journal of Economic Literature. 
+
+Bonnie RJ, Stroud C, Breiner H, editors. Investing in the Health and Well-Being of Young Adults. Washington (DC): National Academies Press (US); 2015 Jan 27. 4, Education and Employment. Available from: https://www.ncbi.nlm.nih.gov/books/NBK284788/ 
+
+Esencan E, Simsek B, Seli E. Analysis of female demographics in the United States: life expectancy, education, employment, family building decisions, and fertility service utilization. Curr Opin Obstet Gynecol. 2021;33(3):170-177. doi:10.1097/GCO.0000000000000704 
+
+Horowitz J. (2018). Relative Education and the Advantage of a College Degree. American sociological review, 83(4), 771--801. https://doi.org/10.1177/0003122418785371  
+
+Hugo, L. S. (2019). Predicting employment through machine learning. National Association of Colleges and Employers. Retrieved from <https://www.naceweb.org/center/> 
+
+Goldin, C. (2014). Career and Family: Women\'s Century-Long Journey Toward Equity. American Economic Review. 
+
+Muraca, F. (2014). How the geography of jobs affects unemployment: Why job accessibility is limited for some groups and what it means for anti-poverty policies. Econ Focus, Third Quarter 2014. <https://www.richmondfed.org/publications/research/econ_focus/2014/q3/feature2> 
+
+U.S. Bureau of Labor Statistics. (2024, May 21). Foreign-born workers: Labor force characteristics -- 2023 (USDL-24-1008). U.S. Department of Labor. <https://www.bls.gov/news.release/forbrn.htm> 
+
+**References for Data:** 
+
+U.S. Bureau of Labor Statistics: <https://www.bls.gov/> 
+
+Current Employment Statistics (CES) Data: <https://www.bls.gov/ces/> 
+
+Quarterly Census of Employment and Wages Data: <https://www.bls.gov/cew/> 
+
+ 
+
+**References for [Package:](https://forum.posit.co/t/caret-package-logo-proposition/183419)** 
+
+•Caret Package: <https://forum.posit.co/t/caret-package-logo-proposition/183419> 
+
+•Shiny Package: <https://shiny.posit.co/> 
+
+**References for Functions:** 
+
+Part 1: 
+
+-   Convert to wide format: select() ; pivot_wider() ; arrange() 
+
+```{=html}
+<!-- -->
+```
+-   Rename variables: rename() 
+
+```{=html}
+<!-- -->
+```
+-   Combine datasets: bind_rows() 
+
+```{=html}
+<!-- -->
+```
+-   Aggregate to annual data: group_by() ; summarise()  
+
+Part 2: 
+
+-   Call in industry: for() ; select() ; filter() ; mutate() 
+
+Dashboard creation: 
+
+Shiny  
+
+-   navbarPage() creates the navigation bar for multiple pages.  
+
+```{=html}
+<!-- -->
+```
+-   tabPanel() defines individual tabs within the navigation bar layout.  
+
+```{=html}
+<!-- -->
+```
+-   sidebarLayout() creates a layout with a sidebar (sidebarPanel()) and main content area (mainPanel()). 
+
+```{=html}
+<!-- -->
+```
+-   selectInput() creates a dropdown menu for users to select from predefined options in the data.   
+
+```{=html}
+<!-- -->
+```
+-   actionButton() creates a button that users can click to see the prediction.  
+
+```{=html}
+<!-- -->
+```
+-   verbatimTextOutput() displays raw text output in the UI, such as predictions or error messages.  
+
+```{=html}
+<!-- -->
+```
+-   leafletOutput() creates a placeholder in the UI for rendering a Leaflet map.  
+
+```{=html}
+<!-- -->
+```
+-   renderLeaflet() renders a Leaflet map dynamically based on user inputs.  
+
+```{=html}
+<!-- -->
+```
+-   observeEvent() observes user interactions and executes code when an event occurs. 
+
+Leaflet  
+
+-   leaflet() initializes a map object. 
+
+```{=html}
+<!-- -->
+```
+-   addPolygons() and highlightOptions() add a thicker border line to a state when the mouse hovers over it.  
+
+```{=html}
+<!-- -->
+```
+-   addTiles() adds the default base map tile (e.g., OpenStreetMap) to the map.  
+
+```{=html}
+<!-- -->
+```
+-   addLegend() defines the color scheme and data values associated with the colors.  
+
+Dplyr  
+
+-   filter() filters data based on conditions set by users.    
+
+```{=html}
+<!-- -->
+```
+-   left_join() combines spatial data with filtered employment change data by matching the state name.   
+
+Simple features  
+
+-   st_read() reads the shapefile (.shp) of states into R as an sf object.  
+
+```{=html}
+<!-- -->
+```
+-   st_make_valid() ensures the geometries in the spatial data are valid according to Simple Features specifications.  

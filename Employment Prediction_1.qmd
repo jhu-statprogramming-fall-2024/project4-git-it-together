@@ -1349,8 +1349,8 @@ future_data_finance <- future_data_finance %>%
 future_data_finance$industry <- "finance"
 ```
 
-2. Information Industry
- 
+2.  Information Industry
+
 ```{r}
 information_results <- process_and_model(
   information,
@@ -1367,12 +1367,11 @@ future_data_information <- future_data_information %>%
 future_data_information$industry <- "information"
 ```
 
-3. Leisure Industry
+3.  Leisure Industry
 
 ```{r}
 leisure_results <-  process_and_model(
   leisure,
-  sheet_name = NULL,  # Specify sheet name if applicable
   target_variable = "oty_month3_emplvl_pct_chg",
   predictors = c("year_quarter_cont", "state")
 )
@@ -1386,12 +1385,12 @@ future_data_leisure <- future_data_leisure %>%
 future_data_leisure$industry <- "leisure"
 
 ```
-4. Professional Industry
+
+4.  Professional Industry
 
 ```{r}
 professional_results <- process_and_model(
   professional,
-  sheet_name = NULL,  # Specify sheet name if applicable
   target_variable = "oty_month3_emplvl_pct_chg",
   predictors = c("year_quarter_cont", "state")
 )

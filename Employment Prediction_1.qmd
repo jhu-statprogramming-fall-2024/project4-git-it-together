@@ -1,0 +1,1426 @@
+---
+title: "BLS Data and Machine Learning"
+format: html
+editor: visual
+---
+
+Members: Amanda Kim (akim148\@jh.edu), Da Yea Song (dsong13\@jhmi.edu)
+
+## Set Up
+
+```{r}
+# Load packages
+suppressPackageStartupMessages(library(blsAPI))
+suppressPackageStartupMessages(library(blscrapeR))
+suppressPackageStartupMessages(library(devtools))
+suppressPackageStartupMessages(library(dplyr))
+suppressPackageStartupMessages(library(tidyr))
+
+install_github("mikeasilva/blsAPI", force = TRUE)
+```
+
+## Data Cleaning Part 1
+
+1.1 Retrieve median weekly earnings by gender
+
+The data has been split into 3 separate data sets (initially) due to the limitation on the BLS website to pull 10 years of data at a time. The 3 data sets have been recombined at the end.
+
+```{r}
+# 2000-2009 Median weekly earning by sex 
+service_occupation_1 <- c(
+  "LEU0254650200",  # Median weekly earning (Men)
+  "LEU0254757000"  # Median weekly earning (Women)
+)
+
+start_year <- 2000
+end_year <- 2009
+service_occupation_1 <- bls_api(service_occupation_1, startyear = start_year, endyear = end_year)
+```
+
+```{r}
+# 2010-2019 Median weekly earning by sex
+service_occupation_2 <- c(
+  "LEU0254650200",  # Median weekly earning (Men)
+  "LEU0254757000"  # Median weekly earning (Women)
+)
+
+start_year <- 2010
+end_year <- 2019
+service_occupation_2 <- bls_api(service_occupation_2, startyear = start_year, endyear = end_year)
+```
+
+```{r}
+# 2020-2023 Median weekly earning by sex
+service_occupation_3 <- c(
+  "LEU0254650200",  # Median weekly earning (Men)
+  "LEU0254757000"  # Median weekly earning (Women)
+)
+
+start_year <- 2020
+end_year <- 2023
+service_occupation_3 <- bls_api(service_occupation_3, startyear = start_year, endyear = end_year)
+```
+
+1.2 Convert data to wide format
+
+```{r}
+service_occupation_1 <- service_occupation_1 %>%
+  select(year, period, seriesID, value) %>%  
+  pivot_wider(names_from = seriesID, values_from = value) %>%  
+  arrange(year, period) 
+```
+
+```{r}
+service_occupation_2 <- service_occupation_2 %>%
+  select(year, period, seriesID, value) %>%  
+  pivot_wider(names_from = seriesID, values_from = value) %>%  
+  arrange(year, period) 
+```
+
+```{r}
+service_occupation_3 <- service_occupation_3 %>%
+  select(year, period, seriesID, value) %>%  
+  pivot_wider(names_from = seriesID, values_from = value) %>%  
+  arrange(year, period) 
+```
+
+1.3 Rename variables for readability
+
+```{r}
+service_occupation_1 <- service_occupation_1 %>%
+  rename(
+    men = LEU0254650200,
+    women = LEU0254757000
+  )
+```
+
+```{r}
+service_occupation_2 <- service_occupation_2 %>%
+  rename(
+    men = LEU0254650200,
+    women = LEU0254757000
+  )
+```
+
+```{r}
+service_occupation_3 <- service_occupation_3 %>%
+  rename(
+    men = LEU0254650200,
+    women = LEU0254757000
+  )
+```
+
+1.5 Combine the three data sets
+
+```{r}
+service_occupation <- bind_rows(service_occupation_1, 
+                                service_occupation_2,
+                                service_occupation_3)
+```
+
+1.6 Aggregate quarterly data to annual
+
+```{r}
+service_occupation_a1 <- service_occupation_1 %>%
+  group_by(year) %>%
+  summarise(
+    a_men = sum(men, na.rm = TRUE) / 4,
+    a_women = sum(women, na.rm = TRUE) / 4
+  ) %>%
+  ungroup()
+```
+
+```{r}
+service_occupation_a2 <- service_occupation_2 %>%
+  group_by(year) %>%
+  summarise(
+    a_men = sum(men, na.rm = TRUE) / 4,
+    a_women = sum(women, na.rm = TRUE) / 4
+  ) %>%
+  ungroup()
+```
+
+```{r}
+service_occupation_a3 <- service_occupation_3 %>%
+  group_by(year) %>%
+  summarise(
+    a_men = sum(men, na.rm = TRUE) / 4,
+    a_women = sum(women, na.rm = TRUE) / 4
+  ) %>%
+  ungroup()
+```
+
+```{r}
+service_occupation_a <- bind_rows(service_occupation_a1, 
+                                service_occupation_a2,
+                                service_occupation_a3)
+```
+
+1.7 Adding Race Variable
+
+The data has been split into 2 separate data sets (initially) due to the limitation on the BLS website to pull 10 years of data at a time. The 3 data sets have been recombined at the end.
+
+```{r}
+service_occupation_1r <- c(
+  "LEU0259199200",  # Median weekly earning (Asian Men)
+  "LEU0259210800",  # Median weekly earning (Asian Women)
+  "LEU0259193400",  # Median weekly earning (White Men)
+  "LEU0259205000",  # Median weekly earning (White Women)
+  "LEU0259196300",  # Median weekly earning (Black Men)
+  "LEU0259207900"   # Median weekly earning (Black Women)
+)
+
+start_year <- 2010
+end_year <- 2019
+service_occupation_1r <- bls_api(service_occupation_1r, startyear = start_year, endyear = end_year)
+```
+
+```{r}
+service_occupation_2r <- c(
+  "LEU0259199200",  # Median weekly earning (Asian Men)
+  "LEU0259210800",  # Median weekly earning (Asian Women)
+  "LEU0259193400",  # Median weekly earning (White Men)
+  "LEU0259205000",  # Median weekly earning (White Women)
+  "LEU0259196300",  # Median weekly earning (Black Men)
+  "LEU0259207900"   # Median weekly earning (Black Women)
+)
+
+start_year <- 2020
+end_year <- 2023
+service_occupation_2r <- bls_api(service_occupation_2r, startyear = start_year, endyear = end_year)
+```
+
+```{r}
+service_occupation_1r <- service_occupation_1r %>%
+  select(year, period, seriesID, value) %>%  
+  pivot_wider(names_from = seriesID, values_from = value) %>%  
+  arrange(year, period) 
+```
+
+```{r}
+service_occupation_2r <- service_occupation_2r %>%
+  select(year, period, seriesID, value) %>%  
+  pivot_wider(names_from = seriesID, values_from = value) %>%  
+  arrange(year, period) 
+```
+
+```{r}
+service_occupation_1r <- service_occupation_1r %>%
+  rename(
+    asian_men = LEU0259199200,
+    asian_women = LEU0259210800,
+    white_men = LEU0259193400,
+    white_women = LEU0259205000,
+    black_men = LEU0259196300,
+    black_women = LEU0259207900
+  )
+```
+
+```{r}
+service_occupation_2r <- service_occupation_2r %>%
+  rename(
+    asian_men = LEU0259199200,
+    asian_women = LEU0259210800,
+    white_men = LEU0259193400,
+    white_women = LEU0259205000,
+    black_men = LEU0259196300,
+    black_women = LEU0259207900
+  )
+```
+
+```{r}
+service_occupation_r <- bind_rows(service_occupation_1r, 
+                                service_occupation_2r)
+```
+
+## Data Cleaning Part 2
+
+2.1 Create function to call in data
+
+```{r}
+qcewGetIndustryData <- function (year, qtr, industry) {
+	url <- "http://data.bls.gov/cew/data/api/YEAR/QTR/industry/INDUSTRY.csv"
+	url <- sub("YEAR", year, url, ignore.case=FALSE)
+	url <- sub("QTR", tolower(qtr), url, ignore.case=FALSE)
+	url <- sub("INDUSTRY", industry, url, ignore.case=FALSE)
+	read.csv(url, header = TRUE, sep = ",", quote="\"", dec=".", na.strings=" ", skip=0)
+}
+```
+
+2.2 Call in industry: information
+
+```{r}
+information <- list()
+
+years <- 2014:2023
+quarters <- c("1", "2", "3", "4")
+industry <- "1022"  
+
+# Loop through years and quarters
+for (year in years) {
+  for (qtr in quarters) {
+    # Fetch data for the given year and quarter
+    data <- qcewGetIndustryData(year, qtr, industry)
+    
+   # Add the year_quarter column
+    if (!is.null(data)) {
+      year_quarter <- paste(year, "Q", qtr, sep = "_")  # e.g., "2000_Q1"
+      data$year_quarter <- year_quarter  # Add as a new column
+      information[[year_quarter]] <- data  # Store in the list
+    }
+  }
+}
+
+information <- do.call(rbind, information)
+```
+
+```{r}
+information <- information %>%
+  select(area_fips, own_code, oty_month3_emplvl_pct_chg, year_quarter)
+
+head(information)
+```
+
+```{r}
+area_fips_values <- c(
+  01000, 02000, 04000, 05000, 06000, 08000, 09000, 10000, 12000, 13000, 
+  15000, 16000, 17000, 18000, 19000, 20000, 21000, 22000, 23000, 24000, 
+  25000, 26000, 27000, 28000, 29000, 30000, 31000, 32000, 33000, 34000, 
+  35000, 36000, 37000, 38000, 39000, 40000, 41000, 42000, 44000, 45000, 
+  46000, 47000, 48000, 49000, 50000, 51000, 53000, 54000, 55000, 56000, 
+  72000, 78000
+)
+
+information <- information %>%
+  filter(area_fips %in% area_fips_values, own_code == 5)
+```
+
+```{r}
+information <- information %>%
+  filter(area_fips %in% c(
+    01000, 02000, 04000, 05000, 06000, 08000, 09000, 10000, 12000, 13000, 
+    15000, 16000, 17000, 18000, 19000, 20000, 21000, 22000, 23000, 24000, 
+    25000, 26000, 27000, 28000, 29000, 30000, 31000, 32000, 33000, 34000, 
+    35000, 36000, 37000, 38000, 39000, 40000, 41000, 42000, 44000, 45000, 
+    46000, 47000, 48000, 49000, 50000, 51000, 53000, 54000, 55000, 56000, 
+    72000, 78000
+  )) %>%
+  
+  mutate(state = case_when(
+    area_fips == 01000 ~ "Alabama",
+    area_fips == 02000 ~ "Alaska",
+    area_fips == 04000 ~ "Arizona",
+    area_fips == 05000 ~ "Arkansas",
+    area_fips == 06000 ~ "California",
+    area_fips == 08000 ~ "Colorado",
+    area_fips == 09000 ~ "Connecticut",
+    area_fips == 10000 ~ "Delaware",
+    area_fips == 12000 ~ "Florida",
+    area_fips == 13000 ~ "Georgia",
+    area_fips == 15000 ~ "Hawaii",
+    area_fips == 16000 ~ "Idaho",
+    area_fips == 17000 ~ "Illinois",
+    area_fips == 18000 ~ "Indiana",
+    area_fips == 19000 ~ "Iowa",
+    area_fips == 20000 ~ "Kansas",
+    area_fips == 21000 ~ "Kentucky",
+    area_fips == 22000 ~ "Louisiana",
+    area_fips == 23000 ~ "Maine",
+    area_fips == 24000 ~ "Maryland",
+    area_fips == 25000 ~ "Massachusetts",
+    area_fips == 26000 ~ "Michigan",
+    area_fips == 27000 ~ "Minnesota",
+    area_fips == 28000 ~ "Mississippi",
+    area_fips == 29000 ~ "Missouri",
+    area_fips == 30000 ~ "Montana",
+    area_fips == 31000 ~ "Nebraska",
+    area_fips == 32000 ~ "Nevada",
+    area_fips == 33000 ~ "New Hampshire",
+    area_fips == 34000 ~ "New Jersey",
+    area_fips == 35000 ~ "New Mexico",
+    area_fips == 36000 ~ "New York",
+    area_fips == 37000 ~ "North Carolina",
+    area_fips == 38000 ~ "North Dakota",
+    area_fips == 39000 ~ "Ohio",
+    area_fips == 40000 ~ "Oklahoma",
+    area_fips == 41000 ~ "Oregon",
+    area_fips == 42000 ~ "Pennsylvania",
+    area_fips == 44000 ~ "Rhode Island",
+    area_fips == 45000 ~ "South Carolina",
+    area_fips == 46000 ~ "South Dakota",
+    area_fips == 47000 ~ "Tennessee",
+    area_fips == 48000 ~ "Texas",
+    area_fips == 49000 ~ "Utah",
+    area_fips == 50000 ~ "Vermont",
+    area_fips == 51000 ~ "Virginia",
+    area_fips == 53000 ~ "Washington",
+    area_fips == 54000 ~ "West Virginia",
+    area_fips == 55000 ~ "Wisconsin",
+    area_fips == 56000 ~ "Wyoming",
+    area_fips == 72000 ~ "Puerto Rico",
+    area_fips == 78000 ~ "Virgin Islands",
+    TRUE ~ NA_character_ # Default for unmatched values
+  ))
+```
+
+2.3 Call in industry: financial activities
+
+```{r}
+finance <- list()
+
+years <- 2014:2023
+quarters <- c("1", "2", "3", "4")
+industry <- "1023"  
+
+# Loop through years and quarters
+for (year in years) {
+  for (qtr in quarters) {
+    # Fetch data for the given year and quarter
+    data <- qcewGetIndustryData(year, qtr, industry)
+    
+   # Add the year_quarter column
+    if (!is.null(data)) {
+      year_quarter <- paste(year, "Q", qtr, sep = "_")  # e.g., "2000_Q1"
+      data$year_quarter <- year_quarter  # Add as a new column
+      finance[[year_quarter]] <- data  # Store in the list
+    }
+  }
+}
+
+finance <- do.call(rbind, finance)
+```
+
+```{r}
+finance <- finance %>%
+  select(area_fips, own_code, oty_month3_emplvl_pct_chg, year_quarter)
+```
+
+```{r}
+area_fips_values <- c(
+  01000, 02000, 04000, 05000, 06000, 08000, 09000, 10000, 12000, 13000, 
+  15000, 16000, 17000, 18000, 19000, 20000, 21000, 22000, 23000, 24000, 
+  25000, 26000, 27000, 28000, 29000, 30000, 31000, 32000, 33000, 34000, 
+  35000, 36000, 37000, 38000, 39000, 40000, 41000, 42000, 44000, 45000, 
+  46000, 47000, 48000, 49000, 50000, 51000, 53000, 54000, 55000, 56000, 
+  72000, 78000
+)
+
+finance <- finance %>%
+  filter(area_fips %in% area_fips_values, own_code == 5)
+```
+
+```{r}
+finance <- finance %>%
+  filter(area_fips %in% c(
+    01000, 02000, 04000, 05000, 06000, 08000, 09000, 10000, 12000, 13000, 
+    15000, 16000, 17000, 18000, 19000, 20000, 21000, 22000, 23000, 24000, 
+    25000, 26000, 27000, 28000, 29000, 30000, 31000, 32000, 33000, 34000, 
+    35000, 36000, 37000, 38000, 39000, 40000, 41000, 42000, 44000, 45000, 
+    46000, 47000, 48000, 49000, 50000, 51000, 53000, 54000, 55000, 56000, 
+    72000, 78000
+  )) %>%
+  
+  mutate(state = case_when(
+    area_fips == 01000 ~ "Alabama",
+    area_fips == 02000 ~ "Alaska",
+    area_fips == 04000 ~ "Arizona",
+    area_fips == 05000 ~ "Arkansas",
+    area_fips == 06000 ~ "California",
+    area_fips == 08000 ~ "Colorado",
+    area_fips == 09000 ~ "Connecticut",
+    area_fips == 10000 ~ "Delaware",
+    area_fips == 12000 ~ "Florida",
+    area_fips == 13000 ~ "Georgia",
+    area_fips == 15000 ~ "Hawaii",
+    area_fips == 16000 ~ "Idaho",
+    area_fips == 17000 ~ "Illinois",
+    area_fips == 18000 ~ "Indiana",
+    area_fips == 19000 ~ "Iowa",
+    area_fips == 20000 ~ "Kansas",
+    area_fips == 21000 ~ "Kentucky",
+    area_fips == 22000 ~ "Louisiana",
+    area_fips == 23000 ~ "Maine",
+    area_fips == 24000 ~ "Maryland",
+    area_fips == 25000 ~ "Massachusetts",
+    area_fips == 26000 ~ "Michigan",
+    area_fips == 27000 ~ "Minnesota",
+    area_fips == 28000 ~ "Mississippi",
+    area_fips == 29000 ~ "Missouri",
+    area_fips == 30000 ~ "Montana",
+    area_fips == 31000 ~ "Nebraska",
+    area_fips == 32000 ~ "Nevada",
+    area_fips == 33000 ~ "New Hampshire",
+    area_fips == 34000 ~ "New Jersey",
+    area_fips == 35000 ~ "New Mexico",
+    area_fips == 36000 ~ "New York",
+    area_fips == 37000 ~ "North Carolina",
+    area_fips == 38000 ~ "North Dakota",
+    area_fips == 39000 ~ "Ohio",
+    area_fips == 40000 ~ "Oklahoma",
+    area_fips == 41000 ~ "Oregon",
+    area_fips == 42000 ~ "Pennsylvania",
+    area_fips == 44000 ~ "Rhode Island",
+    area_fips == 45000 ~ "South Carolina",
+    area_fips == 46000 ~ "South Dakota",
+    area_fips == 47000 ~ "Tennessee",
+    area_fips == 48000 ~ "Texas",
+    area_fips == 49000 ~ "Utah",
+    area_fips == 50000 ~ "Vermont",
+    area_fips == 51000 ~ "Virginia",
+    area_fips == 53000 ~ "Washington",
+    area_fips == 54000 ~ "West Virginia",
+    area_fips == 55000 ~ "Wisconsin",
+    area_fips == 56000 ~ "Wyoming",
+    area_fips == 72000 ~ "Puerto Rico",
+    area_fips == 78000 ~ "Virgin Islands",
+    TRUE ~ NA_character_ # Default for unmatched values
+  ))
+```
+
+2.4 Call in industry: Professional and business services
+
+```{r}
+professional <- list()
+
+years <- 2014:2023
+quarters <- c("1", "2", "3", "4")
+industry <- "1024"  
+
+# Loop through years and quarters
+for (year in years) {
+  for (qtr in quarters) {
+    # Fetch data for the given year and quarter
+    data <- qcewGetIndustryData(year, qtr, industry)
+    
+   # Add the year_quarter column
+    if (!is.null(data)) {
+      year_quarter <- paste(year, "Q", qtr, sep = "_")  # e.g., "2000_Q1"
+      data$year_quarter <- year_quarter  # Add as a new column
+      professional[[year_quarter]] <- data  # Store in the list
+    }
+  }
+}
+
+professional <- do.call(rbind, professional)
+```
+
+```{r}
+professional <- professional %>%
+  select(area_fips, own_code, oty_month3_emplvl_pct_chg, year_quarter)
+```
+
+```{r}
+area_fips_values <- c(
+  01000, 02000, 04000, 05000, 06000, 08000, 09000, 10000, 12000, 13000, 
+  15000, 16000, 17000, 18000, 19000, 20000, 21000, 22000, 23000, 24000, 
+  25000, 26000, 27000, 28000, 29000, 30000, 31000, 32000, 33000, 34000, 
+  35000, 36000, 37000, 38000, 39000, 40000, 41000, 42000, 44000, 45000, 
+  46000, 47000, 48000, 49000, 50000, 51000, 53000, 54000, 55000, 56000, 
+  72000, 78000
+)
+
+professional <- professional %>%
+  filter(area_fips %in% area_fips_values, own_code == 5)
+```
+
+```{r}
+professional <- professional %>%
+  filter(area_fips %in% c(
+    01000, 02000, 04000, 05000, 06000, 08000, 09000, 10000, 12000, 13000, 
+    15000, 16000, 17000, 18000, 19000, 20000, 21000, 22000, 23000, 24000, 
+    25000, 26000, 27000, 28000, 29000, 30000, 31000, 32000, 33000, 34000, 
+    35000, 36000, 37000, 38000, 39000, 40000, 41000, 42000, 44000, 45000, 
+    46000, 47000, 48000, 49000, 50000, 51000, 53000, 54000, 55000, 56000, 
+    72000, 78000
+  )) %>%
+  
+  mutate(state = case_when(
+    area_fips == 01000 ~ "Alabama",
+    area_fips == 02000 ~ "Alaska",
+    area_fips == 04000 ~ "Arizona",
+    area_fips == 05000 ~ "Arkansas",
+    area_fips == 06000 ~ "California",
+    area_fips == 08000 ~ "Colorado",
+    area_fips == 09000 ~ "Connecticut",
+    area_fips == 10000 ~ "Delaware",
+    area_fips == 12000 ~ "Florida",
+    area_fips == 13000 ~ "Georgia",
+    area_fips == 15000 ~ "Hawaii",
+    area_fips == 16000 ~ "Idaho",
+    area_fips == 17000 ~ "Illinois",
+    area_fips == 18000 ~ "Indiana",
+    area_fips == 19000 ~ "Iowa",
+    area_fips == 20000 ~ "Kansas",
+    area_fips == 21000 ~ "Kentucky",
+    area_fips == 22000 ~ "Louisiana",
+    area_fips == 23000 ~ "Maine",
+    area_fips == 24000 ~ "Maryland",
+    area_fips == 25000 ~ "Massachusetts",
+    area_fips == 26000 ~ "Michigan",
+    area_fips == 27000 ~ "Minnesota",
+    area_fips == 28000 ~ "Mississippi",
+    area_fips == 29000 ~ "Missouri",
+    area_fips == 30000 ~ "Montana",
+    area_fips == 31000 ~ "Nebraska",
+    area_fips == 32000 ~ "Nevada",
+    area_fips == 33000 ~ "New Hampshire",
+    area_fips == 34000 ~ "New Jersey",
+    area_fips == 35000 ~ "New Mexico",
+    area_fips == 36000 ~ "New York",
+    area_fips == 37000 ~ "North Carolina",
+    area_fips == 38000 ~ "North Dakota",
+    area_fips == 39000 ~ "Ohio",
+    area_fips == 40000 ~ "Oklahoma",
+    area_fips == 41000 ~ "Oregon",
+    area_fips == 42000 ~ "Pennsylvania",
+    area_fips == 44000 ~ "Rhode Island",
+    area_fips == 45000 ~ "South Carolina",
+    area_fips == 46000 ~ "South Dakota",
+    area_fips == 47000 ~ "Tennessee",
+    area_fips == 48000 ~ "Texas",
+    area_fips == 49000 ~ "Utah",
+    area_fips == 50000 ~ "Vermont",
+    area_fips == 51000 ~ "Virginia",
+    area_fips == 53000 ~ "Washington",
+    area_fips == 54000 ~ "West Virginia",
+    area_fips == 55000 ~ "Wisconsin",
+    area_fips == 56000 ~ "Wyoming",
+    area_fips == 72000 ~ "Puerto Rico",
+    area_fips == 78000 ~ "Virgin Islands",
+    TRUE ~ NA_character_ # Default for unmatched values
+  ))
+```
+
+2.5 Call in industry: education and health
+
+```{r}
+education <- list()
+
+years <- 2014:2023
+quarters <- c("1", "2", "3", "4")
+industry <- "1025"  
+
+# Loop through years and quarters
+for (year in years) {
+  for (qtr in quarters) {
+    # Fetch data for the given year and quarter
+    data <- qcewGetIndustryData(year, qtr, industry)
+    
+   # Add the year_quarter column
+    if (!is.null(data)) {
+      year_quarter <- paste(year, "Q", qtr, sep = "_")  # e.g., "2000_Q1"
+      data$year_quarter <- year_quarter  # Add as a new column
+      education[[year_quarter]] <- data  # Store in the list
+    }
+  }
+}
+
+education <- do.call(rbind, education)
+```
+
+```{r}
+education <- education %>%
+  select(area_fips, own_code, oty_month3_emplvl_pct_chg, year_quarter)
+```
+
+```{r}
+area_fips_values <- c(
+  01000, 02000, 04000, 05000, 06000, 08000, 09000, 10000, 12000, 13000, 
+  15000, 16000, 17000, 18000, 19000, 20000, 21000, 22000, 23000, 24000, 
+  25000, 26000, 27000, 28000, 29000, 30000, 31000, 32000, 33000, 34000, 
+  35000, 36000, 37000, 38000, 39000, 40000, 41000, 42000, 44000, 45000, 
+  46000, 47000, 48000, 49000, 50000, 51000, 53000, 54000, 55000, 56000, 
+  72000, 78000
+)
+
+education <- education %>%
+  filter(area_fips %in% area_fips_values, own_code == 5)
+```
+
+```{r}
+education <- education %>%
+  filter(area_fips %in% c(
+    01000, 02000, 04000, 05000, 06000, 08000, 09000, 10000, 12000, 13000, 
+    15000, 16000, 17000, 18000, 19000, 20000, 21000, 22000, 23000, 24000, 
+    25000, 26000, 27000, 28000, 29000, 30000, 31000, 32000, 33000, 34000, 
+    35000, 36000, 37000, 38000, 39000, 40000, 41000, 42000, 44000, 45000, 
+    46000, 47000, 48000, 49000, 50000, 51000, 53000, 54000, 55000, 56000, 
+    72000, 78000
+  )) %>%
+  
+  mutate(state = case_when(
+    area_fips == 01000 ~ "Alabama",
+    area_fips == 02000 ~ "Alaska",
+    area_fips == 04000 ~ "Arizona",
+    area_fips == 05000 ~ "Arkansas",
+    area_fips == 06000 ~ "California",
+    area_fips == 08000 ~ "Colorado",
+    area_fips == 09000 ~ "Connecticut",
+    area_fips == 10000 ~ "Delaware",
+    area_fips == 12000 ~ "Florida",
+    area_fips == 13000 ~ "Georgia",
+    area_fips == 15000 ~ "Hawaii",
+    area_fips == 16000 ~ "Idaho",
+    area_fips == 17000 ~ "Illinois",
+    area_fips == 18000 ~ "Indiana",
+    area_fips == 19000 ~ "Iowa",
+    area_fips == 20000 ~ "Kansas",
+    area_fips == 21000 ~ "Kentucky",
+    area_fips == 22000 ~ "Louisiana",
+    area_fips == 23000 ~ "Maine",
+    area_fips == 24000 ~ "Maryland",
+    area_fips == 25000 ~ "Massachusetts",
+    area_fips == 26000 ~ "Michigan",
+    area_fips == 27000 ~ "Minnesota",
+    area_fips == 28000 ~ "Mississippi",
+    area_fips == 29000 ~ "Missouri",
+    area_fips == 30000 ~ "Montana",
+    area_fips == 31000 ~ "Nebraska",
+    area_fips == 32000 ~ "Nevada",
+    area_fips == 33000 ~ "New Hampshire",
+    area_fips == 34000 ~ "New Jersey",
+    area_fips == 35000 ~ "New Mexico",
+    area_fips == 36000 ~ "New York",
+    area_fips == 37000 ~ "North Carolina",
+    area_fips == 38000 ~ "North Dakota",
+    area_fips == 39000 ~ "Ohio",
+    area_fips == 40000 ~ "Oklahoma",
+    area_fips == 41000 ~ "Oregon",
+    area_fips == 42000 ~ "Pennsylvania",
+    area_fips == 44000 ~ "Rhode Island",
+    area_fips == 45000 ~ "South Carolina",
+    area_fips == 46000 ~ "South Dakota",
+    area_fips == 47000 ~ "Tennessee",
+    area_fips == 48000 ~ "Texas",
+    area_fips == 49000 ~ "Utah",
+    area_fips == 50000 ~ "Vermont",
+    area_fips == 51000 ~ "Virginia",
+    area_fips == 53000 ~ "Washington",
+    area_fips == 54000 ~ "West Virginia",
+    area_fips == 55000 ~ "Wisconsin",
+    area_fips == 56000 ~ "Wyoming",
+    area_fips == 72000 ~ "Puerto Rico",
+    area_fips == 78000 ~ "Virgin Islands",
+    TRUE ~ NA_character_ # Default for unmatched values
+  ))
+```
+
+2.6 Call in industry: Leisure and hospitality
+
+```{r}
+leisure <- list()
+
+years <- 2014:2023
+quarters <- c("1", "2", "3", "4")
+industry <- "1026"  
+
+# Loop through years and quarters
+for (year in years) {
+  for (qtr in quarters) {
+    # Fetch data for the given year and quarter
+    data <- qcewGetIndustryData(year, qtr, industry)
+    
+   # Add the year_quarter column
+    if (!is.null(data)) {
+      year_quarter <- paste(year, "Q", qtr, sep = "_")  # e.g., "2000_Q1"
+      data$year_quarter <- year_quarter  # Add as a new column
+      leisure[[year_quarter]] <- data  # Store in the list
+    }
+  }
+}
+
+leisure <- do.call(rbind, leisure)
+```
+
+```{r}
+leisure <- leisure %>%
+  select(area_fips, own_code, oty_month3_emplvl_pct_chg, year_quarter)
+```
+
+```{r}
+area_fips_values <- c(
+  01000, 02000, 04000, 05000, 06000, 08000, 09000, 10000, 12000, 13000, 
+  15000, 16000, 17000, 18000, 19000, 20000, 21000, 22000, 23000, 24000, 
+  25000, 26000, 27000, 28000, 29000, 30000, 31000, 32000, 33000, 34000, 
+  35000, 36000, 37000, 38000, 39000, 40000, 41000, 42000, 44000, 45000, 
+  46000, 47000, 48000, 49000, 50000, 51000, 53000, 54000, 55000, 56000, 
+  72000, 78000
+)
+
+leisure <- leisure %>%
+  filter(area_fips %in% area_fips_values, own_code == 5)
+```
+
+```{r}
+leisure <- leisure %>%
+  filter(area_fips %in% c(
+    01000, 02000, 04000, 05000, 06000, 08000, 09000, 10000, 12000, 13000, 
+    15000, 16000, 17000, 18000, 19000, 20000, 21000, 22000, 23000, 24000, 
+    25000, 26000, 27000, 28000, 29000, 30000, 31000, 32000, 33000, 34000, 
+    35000, 36000, 37000, 38000, 39000, 40000, 41000, 42000, 44000, 45000, 
+    46000, 47000, 48000, 49000, 50000, 51000, 53000, 54000, 55000, 56000, 
+    72000, 78000
+  )) %>%
+  
+  mutate(state = case_when(
+    area_fips == 01000 ~ "Alabama",
+    area_fips == 02000 ~ "Alaska",
+    area_fips == 04000 ~ "Arizona",
+    area_fips == 05000 ~ "Arkansas",
+    area_fips == 06000 ~ "California",
+    area_fips == 08000 ~ "Colorado",
+    area_fips == 09000 ~ "Connecticut",
+    area_fips == 10000 ~ "Delaware",
+    area_fips == 12000 ~ "Florida",
+    area_fips == 13000 ~ "Georgia",
+    area_fips == 15000 ~ "Hawaii",
+    area_fips == 16000 ~ "Idaho",
+    area_fips == 17000 ~ "Illinois",
+    area_fips == 18000 ~ "Indiana",
+    area_fips == 19000 ~ "Iowa",
+    area_fips == 20000 ~ "Kansas",
+    area_fips == 21000 ~ "Kentucky",
+    area_fips == 22000 ~ "Louisiana",
+    area_fips == 23000 ~ "Maine",
+    area_fips == 24000 ~ "Maryland",
+    area_fips == 25000 ~ "Massachusetts",
+    area_fips == 26000 ~ "Michigan",
+    area_fips == 27000 ~ "Minnesota",
+    area_fips == 28000 ~ "Mississippi",
+    area_fips == 29000 ~ "Missouri",
+    area_fips == 30000 ~ "Montana",
+    area_fips == 31000 ~ "Nebraska",
+    area_fips == 32000 ~ "Nevada",
+    area_fips == 33000 ~ "New Hampshire",
+    area_fips == 34000 ~ "New Jersey",
+    area_fips == 35000 ~ "New Mexico",
+    area_fips == 36000 ~ "New York",
+    area_fips == 37000 ~ "North Carolina",
+    area_fips == 38000 ~ "North Dakota",
+    area_fips == 39000 ~ "Ohio",
+    area_fips == 40000 ~ "Oklahoma",
+    area_fips == 41000 ~ "Oregon",
+    area_fips == 42000 ~ "Pennsylvania",
+    area_fips == 44000 ~ "Rhode Island",
+    area_fips == 45000 ~ "South Carolina",
+    area_fips == 46000 ~ "South Dakota",
+    area_fips == 47000 ~ "Tennessee",
+    area_fips == 48000 ~ "Texas",
+    area_fips == 49000 ~ "Utah",
+    area_fips == 50000 ~ "Vermont",
+    area_fips == 51000 ~ "Virginia",
+    area_fips == 53000 ~ "Washington",
+    area_fips == 54000 ~ "West Virginia",
+    area_fips == 55000 ~ "Wisconsin",
+    area_fips == 56000 ~ "Wyoming",
+    area_fips == 72000 ~ "Puerto Rico",
+    area_fips == 78000 ~ "Virgin Islands",
+    TRUE ~ NA_character_ # Default for unmatched values
+  ))
+```
+
+------------------------------------------------------------------------
+
+## Set Up
+
+```{r}
+library(tidyverse) 
+
+library(lme4)
+library(caret)
+library(lmtest)
+
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Machine Learning Part 1a (Sex and Race)
+
+1.  Data Preparation
+
+```{r}
+service_occupation_r <- service_occupation_r %>%
+  select(-period)
+
+p1_long <- tidyr::pivot_longer(
+  service_occupation_r,
+  cols = -year,  # Exclude the 'year' column from pivoting
+  names_to = "variable",  # Name for the new column holding the old column names
+  values_to = "value"  # Name for the new column holding the values
+)
+
+# Split the 'variable' column into 'race' and 'sex'
+p1_long <- p1_long %>% 
+  separate(variable, into = c("race", "sex"), sep = "_")
+```
+
+2.  Linear Model: Visualization
+
+```{r}
+plot1 <- p1_long %>%
+  ggplot(aes(x = year, y = value, color = race, linetype = sex,  group = interaction(race, sex))) +
+  labs(title = "Predicted Weekly Income (Average)",
+       subtitle = "By Sex and Race, based on U.S. Bureau of Labor Statistics") +
+  geom_line() +
+  geom_point()  +
+  labs(color = "Race", linetype = "Sex") +  # Add legend labels
+  theme_bw() +
+  ylab("Mean Weekly income") +
+  xlab("Year") 
+plot1
+
+```
+
+3.  Models
+
+```{r}
+model1 <- lm(value ~ year + race + sex, data = p1_long)
+summary(model1)
+```
+
+4.  Machine Learning Model Training
+
+```{r}
+#Split the data into training and test sets
+# Set seed for reproducibility
+set.seed(12062024)
+
+# Create the index for 80% training and 20% testing
+train_index <- createDataPartition(p1_long$value, p = 0.8, list = FALSE)
+
+# Split the data
+train_data <- p1_long[train_index, ]
+test_data <- p1_long[-train_index, ]
+
+#Machine learning model: Linear regression model to predict a country's GINI inedex 
+# Define the training control (10-fold cross-validation)
+train_control <- trainControl(method = "cv", number = 10)
+#Train the model using caret or tiny models
+lm_model <- train(value ~ year + race + sex, 
+                   data = train_data,
+                   method = "lm",      # Custom model method
+                   trControl = train_control)
+```
+
+```{r}
+# Understand model results
+summary(lm_model)
+
+# Assess the model performance both the training and test dataset using Root mean squared error (RMSE)
+
+## Make predictions on the test set
+predictions <- predict(lm_model, newdata = test_data)
+
+## Combine actual vs predicted values
+results <- data.frame(Actual = test_data$value, Predicted = predictions)
+
+## View the results
+head(results)
+
+## Calculate RMSE, R-squared, and MAE
+model_eval <- postResample(predictions, test_data$value)
+
+## View performance metrics
+summary(p1_long$value)
+
+print(model_eval)
+```
+
+5.  Data Frame to Predict the Outcome up to 2050
+
+```{r}
+# Define the ranges for each predictor
+years <- 2025:2050
+races <- c("black", "white", "asian")
+sexes <- c("women", "men")
+
+# Create all combinations of year, race, and sex
+future_data <- expand.grid(
+  year = years,
+  race = races,
+  sex = sexes
+)
+```
+
+6.  Predict Outcome Up to 2050
+
+```{r}
+# Predict outcomes for future_data
+future_data$predicted_value <- predict(lm_model, newdata = future_data)
+
+# View predictions
+print(future_data)
+# <- Embed this new data frame in the dashboard 
+```
+
+## Machine Learning Part 1b (Only Sex)
+
+1.  Data Preparation
+
+```{r}
+p1b_long <- tidyr::pivot_longer(
+  service_occupation_a,
+  cols = -year,  # Exclude the 'year' column from pivoting
+  names_to = "sex",  # Name for the new column holding the old column names
+  values_to = "value"  # Name for the new column holding the values
+)
+
+#Update name 
+p1b_long$sex[p1b_long$sex == "a_women"] <- "women"
+p1b_long$sex[p1b_long$sex == "a_men"] <- "men"
+```
+
+2.  Linear Model: Visualization
+
+```{r}
+plot2 <- p1b_long %>%
+  ggplot(aes(x = year, y = value, linetype = sex)) +
+  geom_line() +
+  geom_point()  +
+  labs(linetype = "Sex") +  # Add legend labels
+  theme_bw() +
+  ylab("Mean weekly income") +
+  xlab("Year") 
+plot2
+```
+
+3.  Models
+
+```{r}
+model1b <- lm(value ~ year + sex, data = p1b_long)
+summary(model1b)
+```
+
+4.  Machine Learning Model Training
+
+```{r}
+#Split the data into training and test sets
+# Set seed for reproducibility
+set.seed(12062024)
+
+# Create the index for 80% training and 20% testing
+train_index <- createDataPartition(p1b_long$value, p = 0.8, list = FALSE)
+
+# Split the data
+train_b_data <- p1b_long[train_index, ]
+test_b_data <- p1b_long[-train_index, ]
+
+#Machine learning model: Linear regression model to predict a country's GINI inedex 
+# Define the training control (10-fold cross-validation)
+train_b_control <- trainControl(method = "cv", number = 10)
+#Train the model using caret or tiny models
+lm_model_b <- train(value ~ year + sex, 
+                   data = train_b_data,
+                   method = "lm",      
+                   trControl = train_b_control)
+```
+
+```{r}
+# Understand model results
+summary(lm_model_b)
+
+# Assess the model performance both the training and test dataset using Root mean squared error (RMSE)
+
+## Make predictions on the test set
+predictions_b <- predict(lm_model_b, newdata = test_b_data)
+
+## Combine actual vs predicted values
+results_b <- data.frame(Actual = test_b_data$value, Predicted = predictions_b)
+
+## View the results
+head(results_b)
+
+## Calculate RMSE, R-squared, and MAE
+model_eval_b <- postResample(predictions_b, test_b_data$value)
+
+## View performance metrics
+summary(p1b_long$value)
+
+print(model_eval_b)
+```
+
+5.  Data Frame to Predict the Outcome up to 2050
+
+```{r}
+# Create all combinations of year, race, and sex
+future_data_b <- expand.grid(
+  year = years,
+  sex = sexes
+)
+```
+
+6.  Predict Outcome Up to 2050
+
+```{r}
+# Predict outcomes for future_data
+future_data_b$predicted_value <- predict(lm_model_b, newdata = future_data_b)
+
+# View predictions
+print(future_data_b)
+```
+
+## Machine Learning Part 2 (Employment Percent Change)
+
+By industry, 12 month percentage employment, region
+
+Ø Predict / Outcome (Y) : employment change
+
+Ø Variables / Predictors (X) : year, state
+
+1.  Education Industry
+
+```{r}
+# Step 1: Separate year and quarter
+education <- education %>%
+  separate(year_quarter, into = c("year", "quarter"), sep = "_Q_")
+
+# Create ordered factor
+education <- education %>%
+  mutate(
+    year_quarter_factor = factor(
+      paste(year, quarter, sep = "_Q_"),  # Combine year and quarter
+      levels = unique(paste(year, quarter, sep = "_Q_")),  # Ensure order by occurrence
+      ordered = TRUE
+    )
+  )
+
+
+str(education$year_quarter_factor)
+education$year_quarter_cont <- as.numeric(education$year_quarter_factor)
+str(education$year_quarter_cont)
+
+
+
+```
+
+1.1 Model Building : Visualization
+
+```{r}
+plot3 <- education %>%
+  ggplot(aes(x = year_quarter_factor, y = oty_month3_emplvl_pct_chg, color = state, group = state)) +
+  geom_line() +
+  theme_bw() +
+  ylab("% Job change") +
+  xlab("Year")  +
+  theme(legend.position = "none") +
+  scale_x_discrete(guide = guide_axis(angle = 90)) #
+plot3
+```
+
+```{r}
+#Treat year/quarter as continuous, starting at 2014 Q1 =1, 2014 Q2 = 2
+model_education <- lm(oty_month3_emplvl_pct_chg ~ year_quarter_cont + state, data = education)
+summary(model_education)
+```
+
+1.2 Machine Learning Model Training
+
+```{r}
+#Split the data into training and test sets
+# Set seed for reproducibility
+set.seed(12072024)
+
+# Split the data
+# Create the index for 80% training and 20% testing
+train_index <- createDataPartition(education$oty_month3_emplvl_pct_chg, p = 0.8, list = FALSE)
+train_education_data <- education[train_index, ]
+test_education_data <- education[-train_index, ]
+
+#Machine learning model: Linear regression model to predict a country's GINI inedex 
+# Define the training control (10-fold cross-validation)
+train_education_control <- trainControl(method = "cv", number = 10)
+#Train the model using caret or tiny models
+lm_model_education <- train(oty_month3_emplvl_pct_chg ~ year_quarter_cont + state, 
+                   data = train_education_data,
+                   method = "lm",      
+                   trControl = train_education_control)
+
+# Understand model results
+summary(lm_model_education)
+
+# Assess the model performance both the training and test dataset using Root mean squared error (RMSE)
+
+## Make predictions on the test set
+predictions_education <- predict(lm_model_education, newdata = test_education_data)
+
+## Combine actual vs predicted values
+results_education <- data.frame(Actual = test_education_data$oty_month3_emplvl_pct_chg, Predicted = predictions_education)
+
+## View the results
+head(results_education)
+
+## Calculate RMSE, R-squared, and MAE
+model_eval_education <- postResample(predictions_education, test_education_data$oty_month3_emplvl_pct_chg)
+
+## View performance metrics
+summary(education$oty_month3_emplvl_pct_chg)
+
+print(model_eval_education)
+```
+
+1.3 Predict Outcomes
+
+```{r}
+# Define the time period
+years <- 2024:2025
+quarters <- paste0("Q_", 1:4)
+year_quarters <- as.vector(outer(years, quarters, paste, sep = "_"))
+year_quarter_cont <- 40:144
+# Define the states and territories
+locations <- c(
+  "Delaware", "Florida", "Georgia", "Hawaii", "Idaho", "Illinois", "Indiana", "Iowa",
+  "Kansas", "Kentucky", "Louisiana", "Maine", "Maryland", "Massachusetts", "Michigan",
+  "Minnesota", "Mississippi", "Missouri", "Montana", "Nebraska", "Nevada", 
+  "New Hampshire", "New Jersey", "New Mexico", "New York", "North Carolina", 
+  "North Dakota", "Ohio", "Oklahoma", "Oregon", "Pennsylvania", "Rhode Island", 
+  "South Carolina", "South Dakota", "Tennessee", "Texas", "Utah", "Vermont", 
+  "Virginia", "Washington", "West Virginia", "Wisconsin", "Wyoming", "Puerto Rico", 
+  "Virgin Islands"
+)
+
+# Create the data frame
+future_data_part2_education <- expand.grid(year_quarter_cont = year_quarter_cont , state = locations)
+```
+
+1.4 Predict Outcome up to 2050
+
+```{r}
+# Predict outcomes for future_data
+future_data_part2_education$predicted_value <- predict(lm_model_education, newdata = future_data_part2_education)
+
+# Convert year_quarter_cont to readable year/quarter
+# Example numeric vector
+values <- 40:144
+
+# Define the starting year and quarter
+start_year <- 2024
+start_quarter <- 1
+
+# Create the year_quarter values
+convert_to_year_quarter <- function(x, start_year, start_quarter) {
+  # Calculate the year and quarter
+  year <- start_year + (x - 40) %/% 4  # Start year incremented by full 4 quarters
+  quarter <- start_quarter + (x - 40) %% 4
+  
+  # Handle overflow in quarters
+  if (quarter > 4) {
+    year <- year + 1
+    quarter <- quarter %% 4
+  }
+  
+  # Create the year_quarter label
+  paste0(year, "_Q", quarter)
+}
+
+# Apply the function to the values
+year_quarter <- sapply(values, convert_to_year_quarter, start_year = 2024, start_quarter = 1)
+
+# Output
+year_quarter
+
+# Example data frame
+df <- data.frame(value = values)
+
+# Add year_quarter as a factor
+future_data_part2_education$year_quarter <- factor(
+  sapply(df$value, convert_to_year_quarter, start_year = 2024, start_quarter = 1),
+  ordered = TRUE
+)
+
+# Add 'industry' column for consistency
+future_data_part2_education$industry <- "education"
+```
+
+2.  General Model/Function
+
+```{r}
+# Generalized function for processing and modeling
+process_and_model <- function(dataset_path, target_variable, predictors, start_year = 2024, start_quarter = 1, end_year = 2050, end_quarter = 4, seed = 12072024) {
+  
+  # Load the dataset
+  data <- dataset_path
+  
+  # Separate year and quarter
+  data <- data %>%
+    separate(year_quarter, into = c("year", "quarter"), sep = "_Q_")
+  
+  # Create ordered factor for year_quarter
+  data <- data %>%
+    mutate(
+      year_quarter_factor = factor(
+        paste(year, quarter, sep = "_Q_"),
+        levels = unique(paste(year, quarter, sep = "_Q_")),
+        ordered = TRUE
+      ),
+      year_quarter_cont = as.numeric(year_quarter_factor)  # Convert factor to numeric
+    )
+  
+  # Split the data into training and test sets
+  set.seed(seed)
+  train_index <- createDataPartition(data[[target_variable]], p = 0.8, list = FALSE)
+  train_data <- data[train_index, ]
+  test_data <- data[-train_index, ]
+  
+  # Define the training control
+  train_control <- trainControl(method = "cv", number = 10)
+  
+  # Train the linear regression model
+  formula <- as.formula(paste(target_variable, "~", paste(predictors, collapse = " + ")))
+  lm_model <- train(
+    formula,
+    data = train_data,
+    method = "lm",
+    trControl = train_control
+  )
+  
+  # Model summary
+  print(summary(lm_model))
+  
+  # Make predictions on the test set
+  predictions <- predict(lm_model, newdata = test_data)
+  
+  # Combine actual vs predicted values
+  results <- data.frame(Actual = test_data[[target_variable]], Predicted = predictions)
+  print(head(results))
+  
+  # Evaluate model performance
+  model_eval <- postResample(predictions, test_data[[target_variable]])
+  print(model_eval)
+  
+  # Prepare future data for prediction
+  unique_states <- unique(data$state)  # Assuming 'state' column exists in all datasets
+  
+  # Generate all the possible year_quarter_cont values from start to end
+  future_year_quarters <- seq(min(data$year_quarter_cont), 
+                              (end_year - start_year) * 4 + end_quarter - start_quarter + 1, by = 1)
+  
+  # Create the future data
+  future_data <- expand.grid(
+    year_quarter_cont = future_year_quarters,
+    state = unique_states
+  )
+  
+  # Predict outcomes for future data
+  future_data$predicted_value <- predict(lm_model, newdata = future_data)
+  
+  # Add year_quarter as a factor
+  convert_to_year_quarter <- function(x, start_year, start_quarter) {
+    # Calculate year and quarter from continuous variable
+    year <- start_year + (x - 1) %/% 4  # Determine the year
+    quarter <- start_quarter + (x - 1) %% 4  # Determine the quarter
+    if (quarter > 4) {
+      year <- year + 1
+      quarter <- quarter %% 4
+    }
+    paste0(year, "_Q", quarter)  # Return the formatted year_quarter
+  }
+  
+  # Apply the function to convert continuous to year_quarter
+  future_data$year_quarter <- factor(
+    sapply(future_data$year_quarter_cont, convert_to_year_quarter, start_year = start_year, start_quarter = start_quarter),
+    ordered = TRUE
+  )
+  
+  # Return results
+  list(
+    model = lm_model,
+    test_results = results,
+    model_eval = model_eval,
+    future_data = future_data
+  )
+}
+
+```
+
+3.  Financial Industry
+
+```{r}
+finance_results <- process_and_model(
+  finance,
+  target_variable = "oty_month3_emplvl_pct_chg",
+  predictors = c("year_quarter_cont", "state")
+)
+
+future_data_finance <- finance_results$future_data
+# Remove rows where all values are identical
+future_data_finance <- future_data_finance %>%
+  distinct()
+
+# Add a new column named 'industry' with the value 'finance' for all rows
+future_data_finance$industry <- "finance"
+```
+
+2. Information Industry
+ 
+```{r}
+information_results <- process_and_model(
+  information,
+  target_variable = "oty_month3_emplvl_pct_chg",
+  predictors = c("year_quarter_cont", "state")
+)
+
+future_data_information <- information_results$future_data
+# Remove rows where all values are identical
+future_data_information <- future_data_information %>%
+  distinct()
+
+# Add an industry column with "information" for future_data_information
+future_data_information$industry <- "information"
+```
+
+3. Leisure Industry
+
+```{r}
+leisure_results <-  process_and_model(
+  leisure,
+  sheet_name = NULL,  # Specify sheet name if applicable
+  target_variable = "oty_month3_emplvl_pct_chg",
+  predictors = c("year_quarter_cont", "state")
+)
+
+future_data_leisure <- leisure_results$future_data
+# Remove rows where all values are identical
+future_data_leisure <- future_data_leisure %>%
+  distinct()
+
+# Add an industry column with "leisure" for future_data_leisure
+future_data_leisure$industry <- "leisure"
+
+```
+4. Professional Industry
+
+```{r}
+professional_results <- process_and_model(
+  professional,
+  sheet_name = NULL,  # Specify sheet name if applicable
+  target_variable = "oty_month3_emplvl_pct_chg",
+  predictors = c("year_quarter_cont", "state")
+)
+
+future_data_professional <- professional_results$future_data
+# Remove rows where all values are identical
+future_data_professional <- future_data_professional %>%
+  distinct()
+
+# Add an industry column with "professional" for future_data_professional
+future_data_professional$industry <- "professional"
+```
+
+## Export Data
+
+```{r}
+# Combine future data for all industries for creating an interactive map in the dashboard
+future_data_combined <- rbind(
+  future_data_finance,
+  future_data_information,
+  future_data_leisure,
+  future_data_part2_education,
+  future_data_professional
+)
+# Save the combined data frame as an .RData file
+save(future_data_combined, file = "future_data_combined.RData")
+
+# Save data for model 1: year and sex
+save(future_data_b, file = "future_data_b.RData")
+# Save data for model 2: year, sex, and race
+save(future_data, file = "future_data.RData")
+```

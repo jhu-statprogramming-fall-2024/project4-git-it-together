@@ -4,7 +4,7 @@ format: html
 editor: visual
 ---
 
-Members: Amanda Kim (akim148\@jh.edu), Da Yea Song (dsong13\@jhmi.edu)
+Members: Amanda Kim (akim148\@jh.edu), Da Yea Song (dsong13\@jhmi.edu), Nhi Dinh (nhidinh\@jhu.edu), Xintong Li (xli355\@jh.edu)
 
 ## Set Up
 
